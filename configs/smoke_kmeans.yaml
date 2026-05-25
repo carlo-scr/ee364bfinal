@@ -1,0 +1,8 @@
+experiment: kmeans_strata
+run_name: smoke_kmeans
+seeds: [0]
+network: {n_buses: 5, n_lines: 7}
+data: {n_train: 50, n_val: 20, obs_noise: 0.3, diurnal_amp: 0.4}
+model: {n_strata: 4}
+training: {steps: 40, lr: 0.05, early_stopping_patience: 0}
+forward: {physics: transport}

@@ -1,0 +1,269 @@
+% EE364B midterm progress report.
+% Standard article style (11 pt, 1-in margins).
+\documentclass[10pt,letterpaper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+\usepackage{cite}
+\usepackage{parskip}
+
+\newcommand{\Cref}[1]{Section~\ref{#1}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\opt}{^{\star}}
+
+\begin{document}
+
+\title{EE364B Progress Report:\\
+Differentiable Inverse DC Optimal Power Flow}
+
+\author{Carlo Schreiber}
+
+\date{May 2026}
+
+\maketitle
+
+\section{Introduction}\label{sec:intro}
+
+Grid operators publish hourly load and generation data, but rarely
+release the associated cost curves and capacity limits that determine who gets
+dispatched. I want to recover those parameters from public data. Knowing them enables counterfactual simulations, marginal
+emission factor (MEF) estimates, and calibrated planning models
+without access to confidential market filings.
+
+To this extent, I frame the problem as inverse optimization~\cite{ahuja2001inverse,
+esfahani2018data}: given dispatches that solve a DC optimal power
+flow (DC-OPF), find the cost and capacity parameters that best
+explain the data. The difficulty is that the forward problem is a
+quadratic program (QP) with kinks in the parameters; whenever a
+generator hits or leaves its limit, the gradient is undefined.
+
+A standard approach~\cite{keshavarz2011imputing} sidesteps this by
+fitting parameters to the KKT conditions of the observed dispatches.
+It works for cost recovery, but breaks down for capacity recovery:
+once the generator capacities $g_{\max}$ are free variables,
+the complementarity conditions are trivially satisfied at any
+differentiation~\cite{amos2017optnet}, which gives exact gradients
+wherever the active set is locally constant. The approach handles
+joint cost-and-capacity recovery and is available off-the-shelf
+via \texttt{cvxpylayers}~\cite{agrawal2019differentiable}.
+
+\section{Problem Formulation}\label{sec:problem}
+
+Consider a network with $N$ buses, $L$ lines, and $G$ generators.
+The forward DC-OPF I use is a QP in generator dispatches $g \in \R^G$
+and line flows $p \in \R^L$:
+\begin{equation}\label{eq:opf}
+\begin{aligned}
+\underset{g,p}{\text{minimize}}\quad
+& f^{\!\top} g + \tfrac{\lambda}{2}\, g^{\!\top} g\\
+\text{subject to}\quad
+& A_g g + A_l p = d,\quad 0 \le g \le g_{\max},\quad |p| \le p_{\max},
+\end{aligned}
+\end{equation}
+where $f \in \R^{G}_{+}$ is the vector of linear marginal costs,
+$g_{\max}$ and $p_{\max}$ are generator and line capacity limits, and
+$d \in \R^N$ is the demand. The small quadratic term
+($\lambda = 10^{-3}$) keeps the dispatch unique when two generators
+have the same cost.
+
+Given $T$ noisy observations $\{(d_t, \hat g_t)\}_{t=1}^{T}$,
+I want to recover the unknown parameters
+$\theta\opt = (f\opt, g\opt_{\max})$ by solving
+\begin{equation}\label{eq:inv}
+\hat\theta = \argmin_{\theta \in \Theta}\;
+\frac{1}{T}\sum_{t=1}^{T}
+\bigl\| g\opt(d_t; \theta) - \hat g_t \bigr\|_2^{2}
++ R(\theta),
+\end{equation}
+where $g\opt(d_t; \theta)$ is the solution of \eqref{eq:opf} at demand
+$d_t$, and $R(\theta)$ is a regulariser (Tikhonov plus an optional
+$\ell_1$ merit-order term). I train with Adam and a cosine
+learning-rate schedule over $300$--$600$ steps.
+
+\paragraph{Identifiability.}
+Not all parameters can be recovered from dispatch data alone.
+The cost vector $f$ is only identifiable up to positive shifts within
+the set of generators that are away from their bounds in at least one
+sample; generators that are always at a limit never influence the
+residual in \eqref{eq:inv}. Similarly, a capacity $g_{\max,i}$ is
+only identifiable if generator $i$ saturates at least once.
+I track both limits using a per-generator interior-fraction score
+and examine the correlation with recovery error in \Cref{sec:results}.
+
+\section{Methods}\label{sec:methods}
+
+I implemented four estimators and compare them on the same
+experiments:
+
+\textbf{Ridge regression} and \textbf{MLP} (two hidden layers,
+ReLU, width 128) both predict dispatch directly from demand.
+They serve as forecasting baselines that completely ignore the
+OPF structure and cannot recover $f$ or $g_{\max}$.
+
+The \textbf{KKT-residual estimator}~\cite{keshavarz2011imputing,%
+aswani2018inverse} fits $\theta$ by minimising the sum of squared
+KKT residuals (stationarity and complementarity) evaluated at the
+observed dispatches. This is a standard inverse-optimisation approach
+and is my main point of comparison.
+
+The \textbf{differentiable estimator} solves
+\eqref{eq:inv} directly by backpropagating through \eqref{eq:opf}
+via \texttt{cvxpylayers}. I run three variants:
+\emph{caps fix} (capacities held at their true values, to isolate
+cost recovery); \emph{full} (joint cost and capacity recovery);
+and \emph{strat.} (full recovery with a Laplacian-smoothed
+$24 \times G$ cost table to capture diurnal merit-order shifts).
+
+For evaluation I use five metrics: clean-dispatch NRMSE on held-out
+demands; cost cosine $\cos\hat f$ and Spearman rank correlation;
+pairwise merit-order accuracy (fraction of generator pairs whose
+cost ordering is correct); and capacity cosine $\cos\hat g_{\max}$.
+Cosine and merit-order accuracy matter most since positive
+scaling or shift of $f$ leaves the dispatch solution unchanged, so
+there is a fundamental indeterminacy that RMSE on $f$ would not
+reflect.
+
+\section{Preliminary Results}\label{sec:results}
+
+\subsection{Main Experiments}\label{sec:main}
+
+A random 10-bus network ($G=10$, $L=12$, $T=200$, relative noise
+$0.05$, three seeds) gives Table~\ref{tab:methods}.
+The differentiable estimator with fixed capacities recovers cost
+cosine $0.959$ versus $0.908$ for KKT ($+0.051$, $37\%$ lower
+seed std). Joint capacity recovery costs one cosine point
+($0.959 \to 0.949$) but recovers $\cos\hat g_{\max} \ge 0.999$
+versus $0.870$ for KKT; this is the clearest evidence that differentiating
+through the QP is worth the added complexity.
+
+\begin{table}[h]
+\centering
+\caption{Headline Comparison, 10-Bus Synthetic Network.
+  $T=200$, three seeds, mean$\,\pm\,$std.
+  Ridge and MLP are forecasting baselines and do not estimate $f$.}
+\label{tab:methods}
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.05}
+\small
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Method & NRMSE$_\text{cl.}$ & $\cos\hat f$ & Merit acc. & $\cos\hat g_{\max}$ \\
+\midrule
+Ridge              & $0.110$ & {--}            & {--}            & {--}            \\
+MLP                & $0.477$ & {--}            & {--}            & {--}            \\
+KKT                & $0.138$ & $.908{\pm}.019$ & $.881{\pm}.034$ & $.870{\pm}.055$ \\
+Diff., caps fix.   & $\mathbf{0.125}$ & $\mathbf{.959{\pm}.012}$ & $\mathbf{.904{\pm}.013}$ & $\mathbf{1.00}$ \\
+Diff., full        & $0.208$ & $.949{\pm}.018$ & $.889{\pm}.022$ & $.999$          \\
+Diff., strat.      & $0.198$ & $.947{\pm}.018$ & $.874{\pm}.046$ & $.999$          \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For MEFs I computed $\partial(c^\top g\opt)/\partial d$ at $10$
+operating points via autograd and compared against ground-truth
+(Table~\ref{tab:mef}). Cosine $0.987$ is the strongest result in
+the project; the gradient structure is preserved even where $\hat f$
+is only recovered up to scale.
+
+\begin{table}[h]
+\centering
+\caption{MEF Accuracy, 10 Operating Points.}
+\label{tab:mef}
+\setlength{\tabcolsep}{6pt}
+\renewcommand{\arraystretch}{1.05}
+\small
+\begin{tabular}{@{}lcc@{}}
+\toprule
+Estimator & MEF cosine & MEF RMSE \\
+\midrule
+Diff., full      & $0.986$ & $0.070$ \\
+Diff., caps fix. & $0.987$ & $0.064$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For diurnal data ($24$-hour merit-order rotation, renewables cheap
+by day, peakers cheap at dusk) the static estimator recovers
+$\cos\hat f = 0.963$ (NRMSE $0.365$) while the stratified estimator
+gets $\cos\hat f = 0.956$ but also recovers the full hour-resolved
+cost table at $\cos\hat F_\text{table} = 0.935$, which the static
+model cannot represent.
+
+On an 8-fuel single-bus PJM-like model ($198$~GW; load
+$80$--$130$~GW; $T=400$; one seed) the estimator gives
+$\cos\hat f = 0.672$, Spearman $0.810$, merit-order accuracy $0.786$
+($22$ of $28$ fuel-pair orderings correct). The result rests on a
+single seed; I will add two more before drawing conclusions.
+
+
+\section{Next Steps}\label{sec:plan}
+
+The main comparison (\Cref{sec:main}) and MEF result are in good
+shape. The remaining work is about a few open
+issues I want to resolve before submitting.
+
+For the noise sweeps, my best guess is that the noise gets clipped
+or rescaled somewhere in the data pipeline before it reaches training,
+so the estimator never actually sees different noise levels. Once I
+find and fix that I will rerun and check whether the cost cosine
+drops meaningfully with $\sigma$. For the identifiability experiment,
+I want to replace the interior-fraction proxy with a score based on
+the rank of the active-set indicator matrix, which is more directly
+connected to the identifiability argument. I also want to figure out
+the finite-difference discrepancy; I plan to sweep the step size
+$\varepsilon$ and rescale the parameters so the Jacobian entries are
+comparable in magnitude.
+
+Beyond those fixes, I would like two more seeds for PJM to get error
+bars, a test on a 39-bus IEEE network, and a sweep of the regulariser
+and Laplacian smoothing weights for the stratified estimator.
+
+\bibliographystyle{plain}
+\begin{thebibliography}{9}
+\bibitem{ahuja2001inverse}
+R.~K. Ahuja and J.~B. Orlin, ``Inverse Optimization,''
+\emph{Operations Research}, vol.~49, no.~5, pp.~771--783, 2001.
+
+\bibitem{keshavarz2011imputing}
+A.~Keshavarz, Y.~Wang, and S.~Boyd, ``Imputing a Convex Objective
+Function,'' in \emph{IEEE International Symposium on Intelligent
+Control}, 2011, pp.~613--619.
+
+\bibitem{esfahani2018data}
+P.~M. Esfahani, S.~Shafieezadeh-Abadeh, G.~A. Hanasusanto, and
+D.~Kuhn, ``Data-Driven Inverse Optimization with Imperfect
+Information,'' \emph{Mathematical Programming}, vol.~167, no.~1,
+pp.~191--234, 2018.
+
+\bibitem{aswani2018inverse}
+A.~Aswani, Z.-J. Shen, and A.~Siddiq, ``Inverse Optimization with
+Noisy Data,'' \emph{Operations Research}, vol.~66, no.~3,
+pp.~870--892, 2018.
+
+\bibitem{amos2017optnet}
+B.~Amos and J.~Z. Kolter, ``OptNet: Differentiable Optimization as a
+Layer in Neural Networks,'' in \emph{International Conference on
+Machine Learning}, 2017, pp.~136--145.
+
+\bibitem{agrawal2019differentiable}
+A.~Agrawal, B.~Amos, S.~Barratt, S.~Boyd, S.~Diamond, and J.~Z.
+Kolter, ``Differentiable Convex Optimization Layers,'' in
+\emph{Advances in Neural Information Processing Systems}, 2019,
+pp.~9558--9570.
+
+\bibitem{diamond2016cvxpy}
+S.~Diamond and S.~Boyd, ``CVXPY: A Python-Embedded Modeling Language
+for Convex Optimization,'' \emph{Journal of Machine Learning
+Research}, vol.~17, no.~83, pp.~1--5, 2016.
+
+\bibitem{boyd2004convex}
+S.~Boyd and L.~Vandenberghe, \emph{Convex Optimization}.
+Cambridge, U.K.: Cambridge University Press, 2004.
+\end{thebibliography}
+
+\end{document}

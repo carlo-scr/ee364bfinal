@@ -1,0 +1,7 @@
+experiment: warmstart
+run_name: smoke_warmstart
+seeds: [0]
+network: {n_buses: 5, n_lines: 7}
+data: {n_train: 30, n_val: 15, obs_noise: 0.3}
+training: {steps: 40, lr: 0.05, early_stopping_patience: 0, warmup_frac: 0.1}
+forward: {physics: transport}

@@ -1,0 +1,20 @@
+experiment: methods_comparison
+run_name: smoke_missing
+seeds: [0, 1]
+network:
+  n_buses: 6
+  n_lines: 8
+data:
+  n_train: 40
+  n_val: 20
+  n_test: 20
+  missing_frac: 0.5
+  obs_noise: 0.3
+model:
+  n_strata: 4
+training:
+  steps: 30
+  lr: 0.05
+  early_stopping_patience: 0
+forward:
+  physics: transport

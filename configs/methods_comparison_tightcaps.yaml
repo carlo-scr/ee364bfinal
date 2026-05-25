@@ -1,0 +1,49 @@
+# Tight-capacity variant: gmax barely above peak demand -> more generators
+# binding at the upper limit -> harder identifiability, sharper test of
+# whether the differentiable methods recover both cost and capacity.
+
+experiment: methods_comparison
+run_name: methods_comparison_tightcaps
+seeds: [0, 1, 2, 3, 4]
+
+network:
+  n_buses: 10
+  n_lines: 14
+
+true_params:
+  f_min: 5.0
+  f_max: 60.0
+  gmin_scale: 1.02         # tighter than default 1.05
+  gmax_scale: 1.10         # tighter than default 1.30
+  pmin_scale: 0.7          # also constrain flows slightly more
+  pmax_scale: 1.0
+
+data:
+  n_train: 200
+  n_val: 100
+  n_test: 200
+  demand_mean: 40.0
+  demand_std: 8.0
+  obs_noise: 0.5
+
+model:
+  n_strata: 24
+
+training:
+  steps: 800           # tight problem -> let it train longer
+  lr: 0.05
+  loss: huber
+  huber_delta: 1.0
+  lr_schedule: cosine
+  lr_min: 1.0e-4
+  early_stopping_patience: 150
+  restore_best: true
+  laplacian_weight: 0.05
+  slack_l1_weight: 0.001
+  l2_weight: 1.0e-5
+  clip_grad_norm: 5.0
+
+forward:
+  physics: transport
+  tau: 0.01
+  eps: 0.1

@@ -1,0 +1,12 @@
+# Tiny smoke variants to verify wiring of each Section 2-6 experiment.
+# Real configs use larger n_train / steps; these are just for CI.
+experiment: epsilon_sweep
+run_name: smoke_epsilon
+seeds: [0]
+network: {n_buses: 5, n_lines: 7}
+data: {n_train: 30, n_val: 15, obs_noise: 0.3}
+model: {n_strata: 1}
+training: {steps: 40, lr: 0.05, early_stopping_patience: 0}
+forward: {physics: transport}
+extra:
+  eps_values: [0.05, 0.5]

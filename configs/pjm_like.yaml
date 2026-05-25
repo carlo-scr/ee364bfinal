@@ -1,0 +1,21 @@
+# PJM-like single-bus 8-fuel stack with hour-of-day strata.
+# Same training recipe as scripts/run_pjm_like.py, but driven by the
+# unified CLI so it benefits from caching and bootstrap CIs.
+#
+# Run:
+#   python scripts/run.py --config configs/pjm_like.yaml
+
+experiment: pjm_like
+run_name: pjm_like_3seed
+seeds: [0, 1, 2]
+
+# The PJM helper builds its own dataset (n_buses / n_lines / strata are
+# baked into the fuel list); these knobs just control sample counts and
+# the training schedule.
+data:
+  n_train: 600
+  n_val: 200
+
+training:
+  steps: 700
+  lr: 0.05

@@ -1,0 +1,9 @@
+# Section 4: capacity screening before refit.
+experiment: screening
+run_name: screening
+seeds: [0, 1, 2]
+network: {n_buses: 12, n_lines: 16}
+data: {n_train: 200, n_val: 100, obs_noise: 0.5}
+training: {steps: 400, lr: 0.05}
+forward: {physics: transport}
+extra: {gen_thresh: 0.05, line_thresh: 0.05}

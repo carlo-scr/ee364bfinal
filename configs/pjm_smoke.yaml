@@ -1,0 +1,10 @@
+# Tiny PJM smoke test
+experiment: pjm_like
+run_name: pjm_smoke
+seeds: [0]
+data:
+  n_train: 80
+  n_val: 30
+training:
+  steps: 60
+  lr: 0.05

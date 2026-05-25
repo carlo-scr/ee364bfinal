@@ -1,0 +1,10 @@
+# Section 2: linearized DC physics (susceptance-weighted flow + phase angles).
+# Same headline shape as methods_comparison_5seed but physics=dc.
+experiment: methods_comparison
+run_name: methods_comparison_dc
+seeds: [0, 1, 2]
+network: {n_buses: 8, n_lines: 12}
+data: {n_train: 150, n_val: 80, n_test: 100, obs_noise: 0.5}
+model: {n_strata: 12}
+training: {steps: 400, lr: 0.05}
+forward: {physics: dc}

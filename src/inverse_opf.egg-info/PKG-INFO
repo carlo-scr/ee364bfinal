@@ -1,0 +1,53 @@
+Metadata-Version: 2.4
+Name: inverse-opf
+Version: 0.1.0
+Summary: Inverse DC-OPF via differentiable convex optimization
+Author: Carlo Schreiber
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: numpy>=1.24
+Requires-Dist: scipy>=1.10
+Requires-Dist: cvxpy>=1.5
+Requires-Dist: cvxpylayers>=0.1.6
+Requires-Dist: torch>=2.1
+Requires-Dist: matplotlib>=3.8
+Requires-Dist: pandas>=2.1
+Requires-Dist: pyyaml>=6.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: ruff>=0.5; extra == "dev"
+
+# Inverse Optimal Power Flow (EE364B Final Project)
+
+This repository implements a practical MVP of the proposal:
+
+- Forward model: differentiable DC-OPF QP.
+- Inverse model: fit unknown parameters from observed `(d, g_obs)`.
+- Extensions: learned generation and line capacities, robust Huber loss, and stratified (time-varying) costs with Laplacian regularization.
+
+## Quick start
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+python scripts/run_synthetic_experiment.py --config configs/synthetic_small.yaml
+```
+
+Artifacts are written to `outputs/<run_name>/`.
+
+## Structure
+
+- `src/inverse_opf/dc_opf.py`: CVXPY + cvxpylayers forward OPF layer.
+- `src/inverse_opf/losses.py`: robust losses and regularizers.
+- `src/inverse_opf/model.py`: inverse model parameterization.
+- `src/inverse_opf/training.py`: gradient-based training loop.
+- `src/inverse_opf/synthetic.py`: synthetic data generation.
+- `src/inverse_opf/metrics.py`: recovery and fit metrics.
+- `scripts/run_synthetic_experiment.py`: end-to-end experiment script.
+
+## Notes
+
+- This code targets synthetic validation first and is designed so real data ingestion can be added in `data/` + a preprocessing module.
+- The OPF formulation uses a strongly convex objective on generation and flow, making the solution map well-behaved for differentiation.
+- When `model.use_stratified_costs: true`, synthetic data is generated with truly time-varying per-stratum costs and reported with both mean-cost and full-table recovery metrics.

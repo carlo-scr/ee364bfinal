@@ -1,0 +1,10 @@
+# Section 6: counterfactual demand scaling and CO2 implications.
+experiment: counterfactual
+run_name: counterfactual
+seeds: [0, 1, 2]
+network: {n_buses: 8, n_lines: 12}
+data: {n_train: 200, n_val: 100, obs_noise: 0.5}
+training: {steps: 400, lr: 0.05}
+forward: {physics: transport}
+extra:
+  scales: [0.8, 0.9, 1.0, 1.1, 1.2]

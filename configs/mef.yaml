@@ -1,0 +1,8 @@
+# Section 6: marginal-emission-factor recovery.
+experiment: mef
+run_name: mef
+seeds: [0, 1, 2]
+network: {n_buses: 8, n_lines: 12}
+data: {n_train: 200, n_val: 100, obs_noise: 0.5}
+training: {steps: 400, lr: 0.05}
+forward: {physics: transport}

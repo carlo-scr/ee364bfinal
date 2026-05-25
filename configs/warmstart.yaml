@@ -1,0 +1,8 @@
+# Section 3: KKT warm-start vs cold start for diff_full.
+experiment: warmstart
+run_name: warmstart
+seeds: [0, 1, 2]
+network: {n_buses: 8, n_lines: 12}
+data: {n_train: 150, n_val: 80, obs_noise: 0.5}
+training: {steps: 400, lr: 0.05, warmup_frac: 0.05}
+forward: {physics: transport}

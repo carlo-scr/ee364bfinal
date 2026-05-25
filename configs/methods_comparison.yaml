@@ -1,0 +1,49 @@
+# Headline 10-bus methods comparison.
+# Used by the IEEE paper Table I.
+#
+# Run:  python scripts/run.py --config configs/methods_comparison.yaml
+
+experiment: methods_comparison
+run_name: methods_comparison
+seeds: [0, 1, 2, 3, 4]
+
+network:
+  n_buses: 10
+  n_lines: 14
+
+true_params:
+  f_min: 5.0
+  f_max: 60.0
+  gmin_scale: 1.05
+  gmax_scale: 1.30
+  pmin_scale: 0.8
+  pmax_scale: 1.2
+
+data:
+  n_train: 200
+  n_val: 100
+  demand_mean: 40.0
+  demand_std: 8.0
+  obs_noise: 0.5
+
+model:
+  n_strata: 24
+
+training:
+  steps: 600
+  lr: 0.05
+  loss: huber
+  huber_delta: 1.0
+  l2_weight: 1.0e-5
+  laplacian_weight: 0.05
+  slack_l1_weight: 1.0e-3
+  clip_grad_norm: 5.0
+  lr_schedule: cosine
+  lr_min: 1.0e-4
+  early_stopping_patience: 120
+  restore_best: true
+
+forward:
+  physics: transport
+  tau: 0.01
+  eps: 0.1

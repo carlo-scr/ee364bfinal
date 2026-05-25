@@ -1,0 +1,10 @@
+# Section 3: stratified diff-OPF with KMeans-recovered strata
+# vs. ground-truth hour-of-day strata.
+experiment: kmeans_strata
+run_name: kmeans_strata
+seeds: [0, 1, 2]
+network: {n_buses: 8, n_lines: 12}
+data: {n_train: 200, n_val: 100, obs_noise: 0.5, diurnal_amp: 0.4, diurnal_cost_amp: 0.3}
+model: {n_strata: 12}
+training: {steps: 400, lr: 0.05, laplacian_weight: 0.05}
+forward: {physics: transport}

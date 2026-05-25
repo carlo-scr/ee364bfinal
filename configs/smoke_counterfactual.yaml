@@ -1,0 +1,9 @@
+experiment: counterfactual
+run_name: smoke_counterfactual
+seeds: [0]
+network: {n_buses: 5, n_lines: 7}
+data: {n_train: 30, n_val: 15, obs_noise: 0.3}
+training: {steps: 40, lr: 0.05, early_stopping_patience: 0}
+forward: {physics: transport}
+extra:
+  scales: [0.9, 1.0, 1.1]

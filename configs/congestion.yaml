@@ -1,0 +1,9 @@
+# Section 2: congestion-frequency comparison true vs. recovered.
+experiment: congestion
+run_name: congestion
+seeds: [0, 1, 2]
+network: {n_buses: 10, n_lines: 14}
+data: {n_train: 200, n_val: 100, obs_noise: 0.5}
+training: {steps: 400, lr: 0.05}
+forward: {physics: transport}
+true_params: {gmin_scale: 1.02, gmax_scale: 1.10, pmin_scale: 0.7, pmax_scale: 1.0}

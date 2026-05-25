@@ -1,0 +1,52 @@
+run_name: ablation
+seed: 42
+
+network:
+  n_buses: 10
+  n_lines: 14
+
+true_params:
+  f_min: 5.0
+  f_max: 60.0
+  gmin_scale: 0.8
+  gmax_scale: 1.2
+  pmin_scale: 0.8
+  pmax_scale: 1.2
+
+data:
+  n_train: 200
+  n_val: 80
+  demand_mean: 40.0
+  demand_std: 8.0
+  observation_noise_std: 1.0
+
+model:
+  n_strata: 24
+  laplacian_weight: 0.1
+  l2_weight: 1.0e-4
+  slack_l1_weight: 1.0e-2
+
+training:
+  steps: 250
+  lr: 0.03
+  loss: huber
+  huber_delta: 1.0
+  clip_grad_norm: 5.0
+
+ablations:
+  - name: baseline_f_only
+    description: "Baseline: learn only f, capacities fixed to truth (F&D setup)"
+    model: fixed_capacity
+    loss: mse
+  - name: ext1_learn_capacities
+    description: "Extension 1: also learn g_max, p_max"
+    model: full
+    loss: mse
+  - name: ext1_ext3_huber
+    description: "Extensions 1+3: learn capacities with Huber + slack L1"
+    model: full
+    loss: huber
+  - name: all_extensions
+    description: "Extensions 1+2+3: stratified costs + Huber + slack L1"
+    model: stratified
+    loss: huber
