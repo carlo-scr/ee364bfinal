@@ -23,8 +23,8 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Differentiable estimator}{2}{subsection.4.1}\protected@file@percent }
 \newlabel{eq:loss}{{3}{2}{Differentiable estimator}{equation.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}KKT-residual baseline}{2}{subsection.4.2}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Headline comparison on the synthetic 10-bus benchmark (3 seeds, mean$\,\pm \,$std). ``Diff.'' rows are this work.}}{2}{table.1}\protected@file@percent }
-\newlabel{tab:methods}{{I}{2}{Headline comparison on the synthetic 10-bus benchmark (3 seeds, mean$\,\pm \,$std). ``Diff.'' rows are this work}{table.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Headline comparison on the synthetic 10-bus benchmark (5 seeds, mean$\,\pm \,$std). ``Diff.'' rows are this work.}}{2}{table.1}\protected@file@percent }
+\newlabel{tab:methods}{{I}{2}{Headline comparison on the synthetic 10-bus benchmark (5 seeds, mean$\,\pm \,$std). ``Diff.'' rows are this work}{table.1}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Regression baselines}{2}{subsection.4.3}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Implementation}{2}{subsection.4.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {V}Experiments}{2}{section.5}\protected@file@percent }
@@ -42,31 +42,49 @@
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}PJM-like economic dispatch}{3}{subsection.5.4}\protected@file@percent }
 \newlabel{sec:exp_pjm}{{\mbox  {V-D}}{3}{PJM-like economic dispatch}{subsection.5.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-E}}Downstream sensitivities}{3}{subsection.5.5}\protected@file@percent }
-\newlabel{sec:exp_mef}{{\mbox  {V-E}}{3}{Downstream sensitivities}{subsection.5.5}{}}
+\newlabel{sec:exp_sensitivity}{{\mbox  {V-E}}{3}{Downstream sensitivities}{subsection.5.5}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Empirical identifiability. Per-generator cost (left) and capacity (right) recovery error plotted against the strictly-interior fraction $s_i$. Generators that are always idle or always binding concentrate at the high-error end; the trend is weak but positive ($\rho =0.08$ for $f$, $\rho =0.28$ for $g_{\max }$, $n{=}20$ generators).}}{3}{figure.3}\protected@file@percent }
 \newlabel{fig:identifiability}{{3}{3}{Empirical identifiability. Per-generator cost (left) and capacity (right) recovery error plotted against the strictly-interior fraction $s_i$. Generators that are always idle or always binding concentrate at the high-error end; the trend is weak but positive ($\rho =0.08$ for $f$, $\rho =0.28$ for $g_{\max }$, $n{=}20$ generators)}{figure.3}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Hour-of-day cost-table recovery on diurnally-varying synthetic data. Columns index generators, rows index hour-of-day strata. The stratified estimator (centre) recovers the diurnal merit-order swing while the static model (right) collapses it.}}{3}{figure.4}\protected@file@percent }
 \newlabel{fig:diurnal_heatmap}{{4}{3}{Hour-of-day cost-table recovery on diurnally-varying synthetic data. Columns index generators, rows index hour-of-day strata. The stratified estimator (centre) recovers the diurnal merit-order swing while the static model (right) collapses it}{figure.4}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-F}}Sample-size and noise sweeps}{3}{subsection.5.6}\protected@file@percent }
 \newlabel{sec:exp_sweep}{{\mbox  {V-F}}{3}{Sample-size and noise sweeps}{subsection.5.6}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {VI}Discussion and limitations}{3}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-G}}Warmstart and timing}{3}{subsection.5.7}\protected@file@percent }
+\newlabel{sec:exp_warmstart}{{\mbox  {V-G}}{3}{Warmstart and timing}{subsection.5.7}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-H}}$\varepsilon $-insensitive loss}{3}{subsection.5.8}\protected@file@percent }
+\newlabel{sec:exp_eps}{{\mbox  {V-H}}{3}{\texorpdfstring {$\varepsilon $}{eps}-insensitive loss}{subsection.5.8}{}}
 \bibstyle{IEEEtran}
 \bibcite{keshavarz2011imputing}{1}
 \bibcite{agrawal2019differentiable}{2}
 \bibcite{fuentes2024}{3}
-\bibcite{ahuja2001inverse}{4}
-\bibcite{esfahani2018data}{5}
-\bibcite{boyd2004convex}{6}
 \@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces PJM-like merit order. Generators sorted by true mean cost (red); learned mean cost (blue) follows the order across the eight fuel buckets.}}{4}{figure.5}\protected@file@percent }
 \newlabel{fig:pjm_stack}{{5}{4}{PJM-like merit order. Generators sorted by true mean cost (red); learned mean cost (blue) follows the order across the eight fuel buckets}{figure.5}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Hour-resolved recovery on PJM-like data: dashed = true, solid = learned. The stratified estimator captures the wind / solar duck-curve shape and the gas peak.}}{4}{figure.6}\protected@file@percent }
 \newlabel{fig:pjm_recovery}{{6}{4}{Hour-resolved recovery on PJM-like data: dashed = true, solid = learned. The stratified estimator captures the wind / solar duck-curve shape and the gas peak}{figure.6}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {VII}Conclusion}{4}{section.7}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{References}{4}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-I}}Downstream counterfactual CO$_2$ analysis}{4}{subsection.5.9}\protected@file@percent }
+\newlabel{sec:exp_cf}{{\mbox  {V-I}}{4}{Downstream counterfactual CO\texorpdfstring {$_2$}{2} analysis}{subsection.5.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-J}}Marginal emission factor recovery}{4}{subsection.5.10}\protected@file@percent }
+\newlabel{sec:exp_mef}{{\mbox  {V-J}}{4}{Marginal emission factor recovery}{subsection.5.10}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Discussion and limitations}{4}{section.6}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces (a) Autograd vs.\ finite-difference Jacobian validation across all validation points and seeds. (b) Estimated vs.\ true marginal emission factors; full estimator (blue) clusters tightly on $y=x$.}}{4}{figure.7}\protected@file@percent }
 \newlabel{fig:mef_validation}{{7}{4}{(a) Autograd vs.\ finite-difference Jacobian validation across all validation points and seeds. (b) Estimated vs.\ true marginal emission factors; full estimator (blue) clusters tightly on $y=x$}{figure.7}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Recovery vs.\ training-set size $T$ (3 seeds; bands are $\pm 1$ std).}}{4}{figure.8}\protected@file@percent }
-\newlabel{fig:sweep_size}{{8}{4}{Recovery vs.\ training-set size $T$ (3 seeds; bands are $\pm 1$ std)}{figure.8}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Recovery vs.\ observation noise $\sigma $ (3 seeds).}}{5}{figure.9}\protected@file@percent }
-\newlabel{fig:sweep_noise}{{9}{5}{Recovery vs.\ observation noise $\sigma $ (3 seeds)}{figure.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces Recovery vs.\ training-set size $T$ (5 seeds; bands are $\pm 1$ std).}}{4}{figure.8}\protected@file@percent }
+\newlabel{fig:sweep_size}{{8}{4}{Recovery vs.\ training-set size $T$ (5 seeds; bands are $\pm 1$ std)}{figure.8}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {VII}Conclusion}{4}{section.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{4}{section*.2}\protected@file@percent }
+\bibcite{ahuja2001inverse}{4}
+\bibcite{esfahani2018data}{5}
+\bibcite{boyd2004convex}{6}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces Recovery vs.\ observation noise $\sigma $ (5 seeds).}}{5}{figure.9}\protected@file@percent }
+\newlabel{fig:sweep_noise}{{9}{5}{Recovery vs.\ observation noise $\sigma $ (5 seeds)}{figure.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces Warmstart vs.\ cold-start: (a) clean dispatch NRMSE; (b) wall-clock training time (5 seeds, 95\% CI).}}{5}{figure.10}\protected@file@percent }
+\newlabel{fig:warmstart}{{10}{5}{Warmstart vs.\ cold-start: (a) clean dispatch NRMSE; (b) wall-clock training time (5 seeds, 95\% CI)}{figure.10}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces Accuracy--speed trade-off across all methods (error bars are 95\% CI over seeds).}}{5}{figure.11}\protected@file@percent }
+\newlabel{fig:timing}{{11}{5}{Accuracy--speed trade-off across all methods (error bars are 95\% CI over seeds)}{figure.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces Effect of insensitivity margin $\varepsilon $ on recovery (95\% CI bands).}}{5}{figure.12}\protected@file@percent }
+\newlabel{fig:epsilon_sweep}{{12}{5}{Effect of insensitivity margin $\varepsilon $ on recovery (95\% CI bands)}{figure.12}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces Counterfactual CO${}_2$ analysis: (a) relative error vs.\ demand scale; (b) true vs.\ estimated CO${}_2$ scatter (colour = demand scale).}}{5}{figure.13}\protected@file@percent }
+\newlabel{fig:counterfactual}{{13}{5}{Counterfactual CO${}_2$ analysis: (a) relative error vs.\ demand scale; (b) true vs.\ estimated CO${}_2$ scatter (colour = demand scale)}{figure.13}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {14}{\ignorespaces MEF recovery: (a) true vs.\ estimated MEF per seed; (b) relative MEF error (95\% CI).}}{5}{figure.14}\protected@file@percent }
+\newlabel{fig:mef_exp}{{14}{5}{MEF recovery: (a) true vs.\ estimated MEF per seed; (b) relative MEF error (95\% CI)}{figure.14}{}}
 \gdef \@abspage@last{5}

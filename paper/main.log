@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.8)  13 MAY 2026 23:30
+This is pdfTeX, Version 3.141592653-2.6-1.40.27 (TeX Live 2025) (preloaded format=pdflatex 2025.3.8)  25 MAY 2026 23:01
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -509,66 +509,66 @@ LaTeX Font Info:    Trying to load font information for OT1+pcr on input line 1
 File: ot1pcr.fd 2001/06/04 font definitions for OT1/pcr.
 )
 
-<figures/methods_comparison.pdf, id=127, 514.02164pt x 141.22763pt>
+<figures/methods_comparison.pdf, id=144, 514.02164pt x 141.23045pt>
 File: figures/methods_comparison.pdf Graphic file (type pdf)
 <use figures/methods_comparison.pdf>
-Package pdftex.def Info: figures/methods_comparison.pdf  used on input line 255
+Package pdftex.def Info: figures/methods_comparison.pdf  used on input line 257
 .
-(pdftex.def)             Requested size: 252.0pt x 69.23662pt.
-<figures/methods_recovery.pdf, id=128, 519.14073pt x 135.24278pt>
+(pdftex.def)             Requested size: 252.0pt x 69.23799pt.
+<figures/methods_recovery.pdf, id=145, 515.62761pt x 135.33092pt>
 File: figures/methods_recovery.pdf Graphic file (type pdf)
 <use figures/methods_recovery.pdf>
-Package pdftex.def Info: figures/methods_recovery.pdf  used on input line 266.
-(pdftex.def)             Requested size: 252.0pt x 65.65044pt.
-<figures/identifiability.pdf, id=131, 513.9401pt x 140.64482pt>
+Package pdftex.def Info: figures/methods_recovery.pdf  used on input line 268.
+(pdftex.def)             Requested size: 252.0pt x 66.13925pt.
+<figures/identifiability.pdf, id=148, 513.9401pt x 140.64482pt>
 File: figures/identifiability.pdf Graphic file (type pdf)
 <use figures/identifiability.pdf>
-Package pdftex.def Info: figures/identifiability.pdf  used on input line 284.
+Package pdftex.def Info: figures/identifiability.pdf  used on input line 286.
 (pdftex.def)             Requested size: 252.0pt x 68.96162pt.
 
 
 [2]
-<figures/diurnal_heatmap.pdf, id=152, 495.43701pt x 146.4233pt>
+<figures/diurnal_heatmap.pdf, id=169, 495.43701pt x 146.4233pt>
 File: figures/diurnal_heatmap.pdf Graphic file (type pdf)
 <use figures/diurnal_heatmap.pdf>
-Package pdftex.def Info: figures/diurnal_heatmap.pdf  used on input line 308.
+Package pdftex.def Info: figures/diurnal_heatmap.pdf  used on input line 310.
 (pdftex.def)             Requested size: 252.0pt x 74.47827pt.
 LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 3
-32.
+34.
  (/usr/local/texlive/2025basic/texmf-dist/tex/latex/psnfss/ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )
-<figures/pjm_stack.pdf, id=156, 251.24908pt x 171.70026pt>
+<figures/pjm_stack.pdf, id=173, 251.24908pt x 171.70026pt>
 File: figures/pjm_stack.pdf Graphic file (type pdf)
 <use figures/pjm_stack.pdf>
-Package pdftex.def Info: figures/pjm_stack.pdf  used on input line 337.
+Package pdftex.def Info: figures/pjm_stack.pdf  used on input line 339.
 (pdftex.def)             Requested size: 252.0pt x 172.22119pt.
-<figures/pjm_recovery.pdf, id=157, 513.94444pt x 152.23526pt>
+<figures/pjm_recovery.pdf, id=174, 513.94444pt x 152.23526pt>
 File: figures/pjm_recovery.pdf Graphic file (type pdf)
 <use figures/pjm_recovery.pdf>
-Package pdftex.def Info: figures/pjm_recovery.pdf  used on input line 346.
+Package pdftex.def Info: figures/pjm_recovery.pdf  used on input line 348.
 (pdftex.def)             Requested size: 252.0pt x 74.6447pt.
 
 
-<figures/mef_validation.pdf, id=159, 393.37384pt x 155.74374pt>
+<figures/mef_validation.pdf, id=176, 393.37384pt x 155.74374pt>
 File: figures/mef_validation.pdf Graphic file (type pdf)
 <use figures/mef_validation.pdf>
-Package pdftex.def Info: figures/mef_validation.pdf  used on input line 371.
+Package pdftex.def Info: figures/mef_validation.pdf  used on input line 373.
 (pdftex.def)             Requested size: 252.0pt x 99.77307pt.
 
-Underfull \hbox (badness 10000) in paragraph at lines 380--385
+Underfull \hbox (badness 10000) in paragraph at lines 382--387
 []\OT1/ptm/m/n/10 Fig. []8[] and Fig. []9[] sweep train-ing size
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 380--385
+Underfull \hbox (badness 10000) in paragraph at lines 382--387
 \OML/cmm/m/it/10 T \OMS/cmsy/m/n/10 2 f\OT1/cmr/m/n/10 50\OML/cmm/m/it/10 ; \OT
 1/cmr/m/n/10 100\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 200\OML/cmm/m/it/10 ; \OT1/c
 mr/m/n/10 400\OMS/cmsy/m/n/10 g$ \OT1/ptm/m/n/10 and ob-ser-va-tion noise
  []
 
 
-Underfull \hbox (badness 6220) in paragraph at lines 380--385
+Underfull \hbox (badness 6220) in paragraph at lines 382--387
 \OML/cmm/m/it/10 ^^[ \OMS/cmsy/m/n/10 2 f\OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT
 1/cmr/m/n/10 1\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/
 n/10 3\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 7\O
@@ -576,21 +576,77 @@ ML/cmm/m/it/10 ; \OT1/cmr/m/n/10 1\OML/cmm/m/it/10 :\OT1/cmr/m/n/10 5\OMS/cmsy/
 m/n/10 g$\OT1/ptm/m/n/10 . The dif-fer-en-tiable es-ti-ma-tor
  []
 
-<figures/sweep_size.pdf, id=162, 512.09299pt x 141.53139pt>
+<figures/sweep_size.pdf, id=179, 512.09299pt x 141.53139pt>
 File: figures/sweep_size.pdf Graphic file (type pdf)
 <use figures/sweep_size.pdf>
-Package pdftex.def Info: figures/sweep_size.pdf  used on input line 388.
+Package pdftex.def Info: figures/sweep_size.pdf  used on input line 390.
 (pdftex.def)             Requested size: 252.0pt x 69.64899pt.
-<figures/sweep_noise.pdf, id=163, 513.47835pt x 141.77354pt>
+<figures/sweep_noise.pdf, id=180, 513.47835pt x 141.77354pt>
 File: figures/sweep_noise.pdf Graphic file (type pdf)
 <use figures/sweep_noise.pdf>
-Package pdftex.def Info: figures/sweep_noise.pdf  used on input line 396.
+Package pdftex.def Info: figures/sweep_noise.pdf  used on input line 398.
 (pdftex.def)             Requested size: 252.0pt x 69.5778pt.
+
+Underfull \hbox (badness 1383) in paragraph at lines 405--412
+[]\OT1/ptm/m/n/10 A KKT-solution warm-start ini-tialises the dif-fer-en-tiable
+ []
+
+<figures/warmstart.pdf, id=183, 510.49846pt x 141.22813pt>
+File: figures/warmstart.pdf Graphic file (type pdf)
+<use figures/warmstart.pdf>
+Package pdftex.def Info: figures/warmstart.pdf  used on input line 415.
+(pdftex.def)             Requested size: 252.0pt x 69.71527pt.
+<figures/timing.pdf, id=184, 251.1395pt x 143.39522pt>
+File: figures/timing.pdf Graphic file (type pdf)
+<use figures/timing.pdf>
+Package pdftex.def Info: figures/timing.pdf  used on input line 423.
+(pdftex.def)             Requested size: 206.64185pt x 117.99399pt.
+
+Underfull \hbox (badness 10000) in paragraph at lines 431--437
+[]\OT1/ptm/m/n/10 We sweep the in-sen-si-tiv-ity mar-gin $\OML/cmm/m/it/10 " \O
+MS/cmsy/m/n/10 2
+ []
+
+
+Underfull \hbox (badness 1484) in paragraph at lines 431--437
+\OMS/cmsy/m/n/10 f\OT1/cmr/m/n/10 0\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm
+/m/it/10 :\OT1/cmr/m/n/10 01\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/1
+0 :\OT1/cmr/m/n/10 05\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1
+/cmr/m/n/10 1\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0\OML/cmm/m/it/10 :\OT1/cmr/m/n
+/10 5\OMS/cmsy/m/n/10 g$ \OT1/ptm/m/n/10 in the Huber-like dead-zone loss.
+ []
+
+
+Underfull \hbox (badness 1629) in paragraph at lines 431--437
+\OT1/ptm/m/n/10 both the no-insensitivity base-line ($\OML/cmm/m/it/10 " \OT1/c
+mr/m/n/10 = 0$\OT1/ptm/m/n/10 ) and overly
+ []
+
+<figures/epsilon_sweep.pdf, id=186, 514.02164pt x 141.49625pt>
+File: figures/epsilon_sweep.pdf Graphic file (type pdf)
+<use figures/epsilon_sweep.pdf>
+Package pdftex.def Info: figures/epsilon_sweep.pdf  used on input line 440.
+(pdftex.def)             Requested size: 252.0pt x 69.3683pt.
 
 
 [3 <./figures/methods_comparison.pdf> <./figures/methods_recovery.pdf> <./figur
 es/identifiability.pdf> <./figures/diurnal_heatmap.pdf>]
+<figures/counterfactual.pdf, id=309, 507.47159pt x 140.97354pt>
+File: figures/counterfactual.pdf Graphic file (type pdf)
+<use figures/counterfactual.pdf>
+Package pdftex.def Info: figures/counterfactual.pdf  used on input line 458.
+(pdftex.def)             Requested size: 252.0pt x 70.00475pt.
+<figures/mef_exp.pdf, id=311, 513.80458pt x 141.19455pt>
+File: figures/mef_exp.pdf Graphic file (type pdf)
+<use figures/mef_exp.pdf>
+Package pdftex.def Info: figures/mef_exp.pdf  used on input line 473.
+(pdftex.def)             Requested size: 252.0pt x 69.25056pt.
 
+
+
+
+[4 <./figures/pjm_stack.pdf> <./figures/pjm_recovery.pdf> <./figures/mef_valida
+tion.pdf> <./figures/sweep_size.pdf>]
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -604,29 +660,26 @@ Before submitting the final camera ready copy, remember to:
 
 
 
-[4 <./figures/pjm_stack.pdf> <./figures/pjm_recovery.pdf> <./figures/mef_valida
-tion.pdf> <./figures/sweep_size.pdf>]
 
 
-
-[5
-
- <./figures/sweep_noise.pdf>] (./main.aux)
+[5 <./figures/sweep_noise.pdf> <./figures/warmstart.pdf> <./figures/timing.pdf>
+ <./figures/epsilon_sweep.pdf> <./figures/counterfactual.pdf> <./figures/mef_ex
+p.pdf>] (./main.aux)
  ***********
 LaTeX2e <2024-11-01> patch level 2
 L3 programming layer <2025-01-18>
  ***********
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: F1D05D32B5D9A868A156B469BA5C767A;2797.
+(rerunfilecheck)             Checksum: 05F5E4B12415F9B80AFE9E5FFE841B1D;3612.
  ) 
 Here is how much of TeX's memory you used:
- 11477 strings out of 474662
- 179968 string characters out of 5751110
- 604900 words of memory out of 5000000
- 34313 multiletter control sequences out of 15000+600000
+ 11534 strings out of 474662
+ 181402 string characters out of 5751110
+ 605736 words of memory out of 5000000
+ 34361 multiletter control sequences out of 15000+600000
  602477 words of font info for 124 fonts, out of 8000000 for 9000
  319 hyphenation exceptions out of 8191
- 75i,13n,79p,541b,444s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,13n,79p,541b,583s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx1
 0.pfb></usr/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/cm/c
 mbx8.pfb></usr/local/texlive/2025basic/texmf-dist/fonts/type1/public/amsfonts/c
@@ -655,10 +708,10 @@ b></usr/local/texlive/2025basic/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></u
 sr/local/texlive/2025basic/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/l
 ocal/texlive/2025basic/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/
 texlive/2025basic/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on main.pdf (5 pages, 635677 bytes).
+Output written on main.pdf (5 pages, 803862 bytes).
 PDF statistics:
- 529 PDF objects out of 1000 (max. 8388607)
- 354 compressed objects within 4 object streams
- 49 named destinations out of 1000 (max. 500000)
- 190 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 645 PDF objects out of 1000 (max. 8388607)
+ 424 compressed objects within 5 object streams
+ 58 named destinations out of 1000 (max. 500000)
+ 247 words of extra memory for PDF output out of 10000 (max. 10000000)
 
