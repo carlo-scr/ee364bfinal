@@ -182,7 +182,7 @@ def train_inverse_model(
             "val_rmse": float(val_rmse_val),
         })
 
-        pbar.set_postfix(loss=f"{float(loss):.4f}", val=f"{val_rmse_val:.4f}", best=f"{best_val:.4f}")
+        pbar.set_postfix(loss=f"{loss.detach().item():.4f}", val=f"{val_rmse_val:.4f}", best=f"{best_val:.4f}")
         if train_cfg.verbose and step % max(1, train_cfg.steps // 10) == 0:
             print(f"  step {step:4d}  loss {float(loss):.4f}  val_rmse {val_rmse_val:.4f}")
 
