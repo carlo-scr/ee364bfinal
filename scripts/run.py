@@ -52,6 +52,12 @@ from inverse_opf.cache import load_or_compute, seed_dir  # noqa: E402
 from inverse_opf.config import ExperimentConfig  # noqa: E402
 from inverse_opf.seeding import set_global_seed  # noqa: E402
 
+try:
+    from tqdm.auto import tqdm as _tqdm
+except ImportError:
+    def _tqdm(it, **_kw):  # type: ignore[misc]
+        return it
+
 
 # ---------------------------------------------------------------------------
 # Adapter: map our nested ExperimentConfig into the flat StandardConfig the
@@ -516,7 +522,9 @@ def main() -> int:
 
     print(f"== {cfg.run_name} :: {cfg.experiment} :: seeds={cfg.seeds} ==", flush=True)
     all_rows: list[dict[str, Any]] = []
-    for seed in cfg.seeds:
+    seed_pbar = _tqdm(cfg.seeds, desc=cfg.experiment, unit="seed", position=0)
+    for seed in seed_pbar:
+        seed_pbar.set_description(f"{cfg.experiment} seed={seed}")
         print(f"\n[seed {seed}]", flush=True)
         bundle = set_global_seed(seed)
         torch.set_num_threads(max(1, torch.get_num_threads()))

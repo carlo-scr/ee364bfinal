@@ -6,6 +6,12 @@ from dataclasses import dataclass
 
 import torch
 
+try:
+    from tqdm.auto import tqdm as _tqdm
+except ImportError:  # tqdm not installed — fall back to a no-op
+    def _tqdm(it, **_kw):  # type: ignore[misc]
+        return it
+
 from .dc_opf import DCOpfLayer
 from .losses import laplacian_smoothness, residual_loss, slack_l1_penalty
 from .metrics import rmse
@@ -80,7 +86,14 @@ def train_inverse_model(
     best_state: dict | None = None
     patience_left = train_cfg.early_stopping_patience or 10**9
 
-    for step in range(1, train_cfg.steps + 1):
+    pbar = _tqdm(
+        range(1, train_cfg.steps + 1),
+        desc="train",
+        unit="step",
+        leave=False,
+        dynamic_ncols=True,
+    )
+    for step in pbar:
         # Optional linear warmup over the first warmup_frac * steps iterations.
         warmup_steps = int(train_cfg.warmup_frac * train_cfg.steps)
         if warmup_steps > 0 and step <= warmup_steps:
@@ -169,6 +182,7 @@ def train_inverse_model(
             "val_rmse": float(val_rmse_val),
         })
 
+        pbar.set_postfix(loss=f"{float(loss):.4f}", val=f"{val_rmse_val:.4f}", best=f"{best_val:.4f}")
         if train_cfg.verbose and step % max(1, train_cfg.steps // 10) == 0:
             print(f"  step {step:4d}  loss {float(loss):.4f}  val_rmse {val_rmse_val:.4f}")
 
