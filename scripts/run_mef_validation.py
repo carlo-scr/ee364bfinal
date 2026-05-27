@@ -35,15 +35,15 @@ def parse_args():
     p = argparse.ArgumentParser()
     p.add_argument("--seeds", type=str, default="0,1,2")
     p.add_argument("--n_points", type=int, default=12)
-    p.add_argument("--steps", type=int, default=600)
+    p.add_argument("--steps", type=int, default=800)
     return p.parse_args()
 
 
 def main():
     args = parse_args()
     seeds = [int(s) for s in args.seeds.split(",")]
-    sc = StandardConfig(n_buses=8, n_lines=12, n_train=200, n_val=100,
-                        obs_noise=0.5, n_strata=8)
+    sc = StandardConfig(n_buses=8, n_lines=12, n_train=400, n_val=200,
+                        obs_noise=0.15, n_strata=8)
 
     out_dir = Path("outputs/mef_validation"); out_dir.mkdir(parents=True, exist_ok=True)
     rows = []
@@ -93,7 +93,7 @@ def main():
 
             jac_ag = jacobian_g_wrt_d(opf_true, d0, f0, ds.true_gmax, ds.true_pmax)
             jac_fd = finite_difference_jacobian(opf_true, d0, f0, ds.true_gmax, ds.true_pmax,
-                                                eps=5e-3)
+                                                eps=1e-3)
             jac_ag_np = jac_ag.cpu().numpy()
             jac_fd_np = jac_fd.cpu().numpy()
             # Per-point Frobenius relative error restricted to *active* rows.

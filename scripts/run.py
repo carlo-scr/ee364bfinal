@@ -418,15 +418,31 @@ def _exp_mef(cfg: ExperimentConfig, seed: int) -> dict[str, Any]:
     print(f"  MEF sys true={mef_true_sys:.1f}  rec={mef_rec_sys:.1f}  "
           f"err={mef_rec_sys - mef_true_sys:+.1f}  "
           f"(top bus errs: {[round(x[3],1) for x in top]})", flush=True)
-    return {"seed": seed, "rows": [{
+    rows = [{
         "method": "diff_full",
         "seed": seed,
+        "scope": "system",
+        "bus": -1,
         "mef_true": mef_true_sys,
         "mef_rec": mef_rec_sys,
         "mef_abs_err": float(abs(mef_rec_sys - mef_true_sys)),
         "mef_rel_err": float(abs(mef_rec_sys - mef_true_sys) / max(abs(mef_true_sys), 1e-9)),
         "f_cos": diff["f_cos"],
-    }]}
+    }]
+    # Add per-bus rows so downstream plots have denser, more informative data.
+    for b, a_true, a_rec, _delta in bus_diffs:
+        rows.append({
+            "method": "diff_full",
+            "seed": seed,
+            "scope": "bus",
+            "bus": int(b),
+            "mef_true": float(a_true),
+            "mef_rec": float(a_rec),
+            "mef_abs_err": float(abs(a_rec - a_true)),
+            "mef_rel_err": float(abs(a_rec - a_true) / max(abs(a_true), 1e-9)),
+            "f_cos": diff["f_cos"],
+        })
+    return {"seed": seed, "rows": rows}
 
 
 def _exp_counterfactual(cfg: ExperimentConfig, seed: int) -> dict[str, Any]:

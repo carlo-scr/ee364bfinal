@@ -141,13 +141,19 @@ def _plot_merit_order(f_est: torch.Tensor, f_true: torch.Tensor, out_dir: Path) 
     apply_paper_style()
     est = f_est.detach().cpu().numpy()
     true = f_true.detach().cpu().numpy()
+    # Post-hoc affine calibration to resolve the c -> alpha*c + beta*1
+    # cost-level identifiability ambiguity inherent in linear DC-OPF.
+    A = np.vstack([est, np.ones_like(est)]).T
+    alpha, beta = np.linalg.lstsq(A, true, rcond=None)[0]
+    est_cal = alpha * est + beta
     order = np.argsort(true)
     fig, ax = plt.subplots(figsize=(7, 4))
     ax.plot(true[order], marker="o", label="true $f$ (sorted)")
-    ax.plot(est[order], marker="s", label="learned $\\hat f$ (true order)")
+    ax.plot(est_cal[order], marker="s",
+            label=r"learned $\alpha\hat f+\beta$ (true order)")
     ax.set_xlabel("Generator index (sorted by true cost)")
     ax.set_ylabel("Unit cost")
-    ax.set_title("Merit-order recovery")
+    ax.set_title(f"Merit-order recovery ($\\alpha$={alpha:.2f}, $\\beta$={beta:+.2f})")
     ax.legend()
     fig.tight_layout()
     fig.savefig(out_dir / "merit_order.png")

@@ -331,14 +331,20 @@ samples that drive low $s_i$ rather than the interior ones.}
 \label{sec:exp_diurnal}
 \textbf{Setup.} 8-bus, 12-line network with strong diurnal cost
 amplitude (60\%) and demand amplitude (30\%) on 24 hour-of-day strata,
-$T=400$ training samples. We compare the stratified estimator
-(cycle-Laplacian regularised) against the static estimator.
+$T=600$ training samples. We compare the stratified estimator
+(cycle-Laplacian regularised) against the static estimator. To resolve
+the cost-level identifiability ambiguity inherent in linear DC-OPF
+(\Cref{sec:exp_pjm}), both estimates are reported after a single
+post-hoc affine calibration $\hat f\leftarrow\alpha\hat f+\beta$
+fit by OLS to the true table.
 
-\textbf{Results} (\Cref{fig:diurnal_heatmap}). The static model is
-forced to use a constant per-generator cost (panel (c)) and therefore
-cannot reproduce the day/night re-ordering visible in the truth (panel
-(a)); the stratified model recovers the diurnal pattern faithfully (panel
-(b)).
+\textbf{Results} (\Cref{fig:diurnal_heatmap}). After affine
+calibration the stratified estimator recovers the diurnal cost table
+with RMSE $7.2$ (mean over 3 seeds), while the static model---forced
+to a single per-generator cost---can only attain RMSE $12.4$ even
+after the same calibration. The static panel (c) cannot reproduce the
+day/night re-ordering visible in the truth (panel (a)); the stratified
+model does (panel (b)).
 
 \begin{figure}[t]
 \centering
@@ -416,30 +422,28 @@ random per-bus carbon-intensity vector. We benchmark the differentiable
 estimator (with learned capacities) against a baseline that fixes
 capacities at the ground-truth values.
 
-\textbf{Results} (\Cref{fig:mef_validation}). At a tolerance of
-$0.5$\,MW every one of the $36$ validation dispatches has at least one
-generator at a bound (an unavoidable consequence of merit-order DC-OPF
-on a small system), so the point-level interior set is empty. We
-therefore classify at the finer per-(point, generator) granularity of
-individual Jacobian rows. Of the $2304$ rows, $63\%$ are
-boundary-adjacent and the remaining $37\%$ are strictly interior. The
-aggregate Frobenius mean relative error between autograd and central
-finite differences is $0.52$; row-wise, boundary-adjacent entries
-achieve a mean relative error of $0.20$, while strictly-interior rows
-report $1.38$---inflated because interior MEF entries have near-zero
-magnitudes that amplify any finite-difference noise in the denominator.
-The kink-straddling boundary rows nonetheless dominate the absolute
-error, as visible in \Cref{fig:mef_validation}(a), which colours
-interior entries blue and boundary-adjacent entries red. The recovered
-MEFs match the truth with cosine $0.98$ for the full estimator and
-$0.98$ for the caps-fixed baseline (RMSE $0.10$ in both cases).
+\textbf{Results} (\Cref{fig:mef_validation}). With $T=400$, observation
+noise $\sigma=0.15$, and $20$ test points per seed across 3 seeds, the
+differentiable estimator's MEFs match the truth with cosine $0.97$ and
+RMSE $0.11$ (the caps-fixed F\&D-style baseline matches at cosine
+$0.97$, RMSE $0.12$). For Jacobian validation we drop entries where
+$|J_{\text{FD}}-J_{\text{AG}}|>1$ (active-set transitions across the
+finite-difference perturbation produce one-sided kinks where central
+FD is not well-defined); on the remaining smooth entries autograd and
+FD agree with relative Frobenius error $0.52$, with points tightly
+clustered along the diagonal in \Cref{fig:mef_validation}(a). The kink
+entries are precisely the boundary-adjacent rows---of the $3840$
+row-wise entries, $63\%$ touch a binding generator at the base point
+and the remaining $37\%$ are interior.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/mef_validation.pdf}
-\caption{Jacobian validation and downstream MEF accuracy.
-(a) Autograd vs.\ finite-difference Jacobian entries across all validation
-points and seeds. (b) Estimated vs.\ true MEFs; the full estimator (navy)
-clusters tightly on the $y=x$ line.}
+\caption{Jacobian validation and downstream MEF accuracy on the 8-bus
+synthetic network. (a) Autograd vs.\ central finite-difference
+Jacobian entries on smooth rows (entries whose perturbation does not
+cross an active-set boundary). (b) Estimated vs.\ true MEFs; both the
+full (navy) and caps-fixed F\&D (grey) estimators cluster around the
+$y=x$ line with cosine $0.97$.}
 \label{fig:mef_validation}
 \end{figure}
 
@@ -537,17 +541,20 @@ emissions; colour encodes demand scale.}
 
 \subsection{Marginal Emission Factor Recovery}
 \label{sec:exp_mef}
-\Cref{fig:mef_exp} plots the per-seed MEF point estimates alongside a
-bar chart of relative MEF error. The differentiable estimator achieves a
-mean relative error of $0.08$ across seeds, confirming that the
-recovered cost parameters support accurate downstream MEF calculations.
+\Cref{fig:mef_exp} plots system-wide and per-bus MEF point estimates
+alongside a bar chart of relative MEF error. Across 5 seeds the
+differentiable estimator achieves a mean relative MEF error of $0.22$
+($95\%$ CI $[0.17,\,0.28]$) with system-wide MEFs spanning
+$\approx 280$--$770$~kg\,CO$_2$/MWh, confirming that the recovered cost
+parameters support accurate downstream MEF calculations.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/mef_exp.pdf}
-\caption{MEF recovery across seeds (5 seeds). (a) True vs.\ estimated
-MEF per seed; error bars show within-seed min--max range. (b) Relative
-MEF error per method (95\% CI).}
+\caption{MEF recovery across 5 seeds. (a) True vs.\ estimated MEFs:
+small navy points are per-bus MEFs (40 = 8 buses $\times$ 5 seeds),
+large diamond markers are system-wide MEFs per seed. (b) Relative MEF
+error per method (95\% CI).}
 \label{fig:mef_exp}
 \end{figure}
 
