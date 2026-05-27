@@ -113,32 +113,93 @@ def main():
             true_table = f_table_true
 
     df = pd.DataFrame(rows); df.to_csv(out_dir / "results.csv", index=False)
+
+    # Base heat-rate marginal costs (truth for the merit-order plot).
+    # We compare against these rather than the time-average f_table, because
+    # f_table encodes solar/wind unavailability by raising costs to 500 $/MWh,
+    # which inflates their "mean" beyond their actual heat-rate cost.
+    n_fuel = len(PJM_FUELS)
+    base_costs = np.array([c for _, c, _ in PJM_FUELS], dtype=float)
+
+    # Costs in inverse OPF are identifiable only up to an affine transform
+    # (adding a constant to all costs or rescaling does not change the dispatch
+    # argmin under fixed total demand). We therefore report both the raw
+    # learned costs and a post-hoc affine calibration $\alpha\hat f + \beta$
+    # fit by OLS to the truth.
+    raw_learn = learned_mean[:n_fuel].astype(float)
+    A = np.vstack([raw_learn, np.ones_like(raw_learn)]).T
+    alpha, beta = np.linalg.lstsq(A, base_costs, rcond=None)[0]
+    cal_learn = alpha * raw_learn + beta
+    rmse_cal = float(np.sqrt(((cal_learn - base_costs) ** 2).mean()))
+    rel_rmse_cal = rmse_cal / float(base_costs.mean())
+    pair_correct = int(sum(
+        (base_costs[i] < base_costs[j]) == (raw_learn[i] < raw_learn[j])
+        for i in range(n_fuel) for j in range(i + 1, n_fuel)
+    ))
+    n_pairs = n_fuel * (n_fuel - 1) // 2
+
     np.savez(out_dir / "arrays.npz",
              f_mean_true=true_mean, f_mean_learned=learned_mean,
-             f_table_true=true_table, f_table_learned=learned_table)
+             f_table_true=true_table, f_table_learned=learned_table,
+             base_costs=base_costs, learned_calibrated=cal_learn,
+             affine_alpha=alpha, affine_beta=beta)
     Path(out_dir / "summary.json").write_text(json.dumps({
         "f_mean_cos_mean": float(df["f_mean_cos"].mean()),
         "f_mean_cos_std": float(df["f_mean_cos"].std()),
         "f_mean_spearman_mean": float(df["f_mean_spearman"].mean()),
         "f_mean_merit_acc_mean": float(df["f_mean_merit_acc"].mean()),
         "f_table_cos_mean": float(df["f_table_cos"].mean()),
+        "affine_alpha": float(alpha),
+        "affine_beta": float(beta),
+        "calibrated_rmse": rmse_cal,
+        "calibrated_rel_rmse": rel_rmse_cal,
+        "pair_order_correct": pair_correct,
+        "pair_order_total": n_pairs,
     }, indent=2))
 
-    # ---- merit-order figure ----
+    # ---- merit-order figure: 2-panel ----
     apply_paper_style()
-    n_fuel = len(PJM_FUELS)
     fuels = [name for name, _, _ in PJM_FUELS]
-    order = np.argsort(true_mean[:n_fuel])
-    fig, ax = plt.subplots(figsize=figsize(1.0, 2.4))
-    ax.plot(np.arange(n_fuel), true_mean[:n_fuel][order],
-            marker="o", color=PALETTE["red"], label="true mean cost")
-    ax.plot(np.arange(n_fuel), learned_mean[:n_fuel][order],
-            marker="s", color=PALETTE["blue"], label=r"learned $\hat f$")
-    ax.set_xticks(np.arange(n_fuel))
+    order = np.argsort(base_costs)
+
+    fig, axes = plt.subplots(1, 2, figsize=figsize(2.0, 2.2))
+
+    # (a) bar chart: truth vs affine-calibrated learned (sorted by truth)
+    ax = axes[0]
+    xs = np.arange(n_fuel)
+    w = 0.4
+    ax.bar(xs - w / 2, base_costs[order], width=w,
+           color=PALETTE["red"], alpha=0.85, label="true cost")
+    ax.bar(xs + w / 2, cal_learn[order], width=w,
+           color=PALETTE["blue"], label=r"learned $\alpha\hat f+\beta$")
+    ax.set_xticks(xs)
     ax.set_xticklabels([fuels[i] for i in order], rotation=30, ha="right", fontsize=6)
-    ax.set_ylabel("Marginal cost (\\$/MWh)")
-    ax.set_title("PJM-like merit order (sorted by truth)")
-    ax.legend()
+    ax.set_ylabel(r"Marginal cost (\$/MWh)")
+    ax.set_title(f"(a) Costs after affine calibration\n"
+                 fr"$\alpha={alpha:.2f}$, $\beta={beta:.1f}$, rel RMSE {rel_rmse_cal:.0%}")
+    ax.legend(loc="upper left", fontsize=6)
+
+    # (b) rank-rank scatter: shows ordering is recovered
+    ax = axes[1]
+    true_rank = np.argsort(np.argsort(base_costs)) + 1
+    learn_rank = np.argsort(np.argsort(raw_learn)) + 1
+    ax.plot([1, n_fuel], [1, n_fuel], color="0.6", linestyle="--", linewidth=0.8)
+    for i in range(n_fuel):
+        ax.scatter(true_rank[i], learn_rank[i], s=40, color=PALETTE["blue"],
+                   edgecolor="black", linewidth=0.4, zorder=3)
+        ax.annotate(fuels[i], (true_rank[i], learn_rank[i]),
+                    xytext=(4, -2), textcoords="offset points", fontsize=6)
+    ax.set_xlabel("true merit rank")
+    ax.set_ylabel("learned merit rank")
+    spear = df["f_mean_spearman"].mean()
+    ax.set_title(f"(b) Merit-order recovery\n"
+                 fr"Spearman $\rho={spear:.2f}$, "
+                 f"{pair_correct}/{n_pairs} pairs correct")
+    ax.set_xticks(np.arange(1, n_fuel + 1))
+    ax.set_yticks(np.arange(1, n_fuel + 1))
+    ax.set_aspect("equal")
+
+    fig.tight_layout(pad=0.4)
     save_figure(fig, "pjm_stack", out_dir)
 
     # ---- diurnal recovery for solar / wind / ccgt ----
@@ -150,10 +211,11 @@ def main():
         i = fuel_idx[fuel]
         ax.plot(np.arange(true_table.shape[0]), true_table[:, i],
                 color=palette[k], linestyle="--", alpha=0.7)
-        ax.plot(np.arange(learned_table.shape[0]), learned_table[:, i],
+        ax.plot(np.arange(learned_table.shape[0]),
+                alpha * learned_table[:, i] + beta,
                 color=palette[k], linestyle="-", label=fuel)
     ax.set_xlabel("Hour-of-day stratum"); ax.set_ylabel("Marginal cost (\\$/MWh)")
-    ax.set_title("Hour-resolved recovery (dashed=true, solid=learned)")
+    ax.set_title("Hour-resolved recovery (dashed=true, solid=calibrated learned)")
     ax.set_yscale("symlog")
     ax.legend()
     save_figure(fig, "pjm_recovery", out_dir)

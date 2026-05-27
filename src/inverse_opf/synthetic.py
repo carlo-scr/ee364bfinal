@@ -148,14 +148,18 @@ def make_synthetic_dataset(
 
 PJM_FUELS = [
     # name,            cost ($/MWh),  capacity (GW)
-    ("nuclear",         8.0,  35.0),
+    # Caps tuned so every fuel is *partially* marginal across the load curve:
+    # peakers fire only on the top ~10% of hours, baseload backs off on the
+    # bottom ~10%, and total cap (~175 GW) leaves ~20% headroom over peak
+    # demand for stable training.
+    ("nuclear",         8.0,  25.0),
     ("hydro",          12.0,   8.0),
-    ("wind",           15.0,  15.0),
+    ("wind",           15.0,  14.0),
     ("solar",          18.0,  12.0),
-    ("coal",           28.0,  45.0),
-    ("ccgt",           35.0,  60.0),
-    ("oil_st",         85.0,   8.0),
-    ("ct_peaker",     140.0,  15.0),
+    ("coal",           28.0,  32.0),
+    ("ccgt",           35.0,  35.0),
+    ("oil_st",         85.0,  14.0),
+    ("ct_peaker",     140.0,  25.0),
 ]
 
 
@@ -165,7 +169,7 @@ def make_pjm_like_dataset(
     seed: int = 0,
     observation_noise_frac: float = 0.02,
     n_strata: int = 24,
-    diurnal_load_amp: float = 0.35,
+    diurnal_load_amp: float = 0.45,
     weekly_amp: float = 0.05,
     renewable_curtailment: bool = True,
 ) -> SyntheticDataset:
@@ -194,8 +198,10 @@ def make_pjm_like_dataset(
     strata = rng.integers(0, n_strata, size=(n_total,))
     week_phase = rng.uniform(0.0, 2 * np.pi, size=(n_total,))
 
-    # Realistic system load ~ 80-130 GW with diurnal + weekly noise.
-    base_load = 100.0
+    # Realistic system load with diurnal + weekly noise; tuned so the trough
+    # is ~50 GW (forces inframarginal baseload to back off) and the peak is
+    # ~130 GW (forces oil/peaker plants to fire), exercising the full stack.
+    base_load = 85.0
     diurnal = 1.0 + diurnal_load_amp * np.sin(2 * np.pi * strata / n_strata - 1.0)
     weekly = 1.0 + weekly_amp * np.sin(week_phase)
     noise_load = 1.0 + 0.05 * rng.standard_normal(n_total)

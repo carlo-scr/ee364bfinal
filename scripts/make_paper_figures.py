@@ -380,6 +380,11 @@ def _sweep_plot(name, xlabel, xlogscale=True):
 # ---------------------------------------------------------------------------
 PJM_FUEL_NAMES = ["nuclear", "hydro", "wind", "solar", "coal", "ccgt",
                   "oil_st", "ct_peaker"]
+# Base heat-rate marginal costs ($/MWh) as defined in synthetic.PJM_FUELS.
+# We compare against these (not the time-averaged f_table) because solar/wind
+# availability is encoded by raising costs to 500 when unavailable, which
+# inflates their mean far above the true heat rate.
+PJM_BASE_COSTS = np.array([8.0, 12.0, 15.0, 18.0, 28.0, 35.0, 85.0, 140.0])
 
 
 def fig_pjm():
@@ -388,45 +393,96 @@ def fig_pjm():
         print("  [skip] pjm_like/arrays.npz not found")
         return
     arr = np.load(path)
-    f_mean_true = arr["f_mean_true"]
     f_mean_learn = arr["f_mean_learned"]
     f_table_true = arr["f_table_true"]
     f_table_learn = arr["f_table_learned"]
     n_fuel = len(PJM_FUEL_NAMES)
+    base_costs = (arr["base_costs"] if "base_costs" in arr.files
+                  else PJM_BASE_COSTS)
+
+    # Affine calibration: costs are identifiable only up to a c -> alpha*c + beta
+    # ambiguity under a fixed total-demand balance, so we report both the raw
+    # ordering and the calibrated levels. Use saved coefficients if present.
+    raw_learn = f_mean_learn[:n_fuel].astype(float)
+    if "affine_alpha" in arr.files and "affine_beta" in arr.files:
+        alpha = float(arr["affine_alpha"])
+        beta = float(arr["affine_beta"])
+    else:
+        A = np.vstack([raw_learn, np.ones_like(raw_learn)]).T
+        alpha, beta = np.linalg.lstsq(A, base_costs, rcond=None)[0]
+    cal_learn = alpha * raw_learn + beta
+    rel_rmse = float(np.sqrt(((cal_learn - base_costs) ** 2).mean())
+                     / base_costs.mean())
+    pair_correct = int(sum(
+        (base_costs[i] < base_costs[j]) == (raw_learn[i] < raw_learn[j])
+        for i in range(n_fuel) for j in range(i + 1, n_fuel)
+    ))
+    n_pairs = n_fuel * (n_fuel - 1) // 2
+    # Spearman without scipy: use rank correlation
+    tr = np.argsort(np.argsort(base_costs))
+    lr = np.argsort(np.argsort(raw_learn))
+    spear = float(np.corrcoef(tr, lr)[0, 1])
 
     apply_paper_style()
 
-    order = np.argsort(f_mean_true[:n_fuel])
-    fig, ax = plt.subplots(figsize=figsize(1.0, 2.4))
+    order = np.argsort(base_costs)
+    fig, axes = plt.subplots(1, 2, figsize=figsize(2.0, 2.2))
+
+    # (a) Affine-calibrated bars
+    ax = axes[0]
     xs = np.arange(n_fuel)
     width = 0.4
-    ax.bar(xs - width / 2, f_mean_true[:n_fuel][order], width=width,
+    ax.bar(xs - width / 2, base_costs[order], width=width,
            color=PALETTE["accent"], edgecolor=PALETTE["accent"], linewidth=0.4,
-           label="true mean cost", alpha=0.85)
-    ax.bar(xs + width / 2, f_mean_learn[:n_fuel][order], width=width,
+           label="true cost", alpha=0.85)
+    ax.bar(xs + width / 2, cal_learn[order], width=width,
            color=PALETTE["navy"], edgecolor=PALETTE["navy"], linewidth=0.4,
-           label=r"learned $\hat f$")
+           label=r"learned $\alpha\hat f{+}\beta$")
     ax.set_xticks(xs)
     ax.set_xticklabels([PJM_FUEL_NAMES[i] for i in order],
                        rotation=30, ha="right", fontsize=7)
     ax.set_ylabel(r"Marginal cost (\$/MWh)")
-    ax.set_title("PJM-like merit order (sorted by truth)")
-    ax.set_yscale("symlog", linthresh=20)
-    ax.legend(loc="upper left")
-    fig.tight_layout(pad=0.3)
+    ax.set_title(rf"(a) Affine-calibrated: $\alpha{{=}}{alpha:.2f}$, "
+                 rf"$\beta{{=}}{beta:.1f}$, rel. RMSE {rel_rmse:.0%}")
+    ax.legend(loc="upper left", fontsize=7)
+
+    # (b) Rank-rank plot
+    ax = axes[1]
+    true_rank = tr + 1
+    learn_rank = lr + 1
+    ax.plot([1, n_fuel], [1, n_fuel], color=PALETTE["gray"],
+            linestyle="--", linewidth=0.8)
+    for i in range(n_fuel):
+        ax.scatter(true_rank[i], learn_rank[i], s=45,
+                   color=PALETTE["navy"], edgecolor="black",
+                   linewidth=0.4, zorder=3)
+        ax.annotate(PJM_FUEL_NAMES[i], (true_rank[i], learn_rank[i]),
+                    xytext=(4, -2), textcoords="offset points", fontsize=6)
+    ax.set_xlabel("true merit rank")
+    ax.set_ylabel("learned merit rank")
+    ax.set_title(rf"(b) Merit order: Spearman $\rho{{=}}{spear:.2f}$, "
+                 f"{pair_correct}/{n_pairs} pairs")
+    ax.set_xticks(np.arange(1, n_fuel + 1))
+    ax.set_yticks(np.arange(1, n_fuel + 1))
+    ax.set_aspect("equal")
+
+    fig.tight_layout(pad=0.4)
     save_figure(fig, "pjm_stack", OUT / "pjm_like")
 
     fig, axes = plt.subplots(1, 2, figsize=figsize(2.0, 2.1))
     fuel_idx = {n: i for i, n in enumerate(PJM_FUEL_NAMES)}
     hours = np.arange(f_table_true.shape[0])
     cols = _ordered_blues(3)
+    # Apply the same affine calibration to per-stratum learned costs so the
+    # diurnal recovery plot is on a comparable scale to truth.
+    f_table_learn_cal = alpha * f_table_learn + beta
 
     ax = axes[0]
     for k, fuel in enumerate(["hydro", "coal", "ccgt"]):
         i = fuel_idx[fuel]
         ax.plot(hours, f_table_true[:, i], color=PALETTE["accent"],
                 linestyle="--", linewidth=0.9, alpha=0.7)
-        ax.plot(hours, f_table_learn[:, i], color=cols[k], linewidth=1.3,
+        ax.plot(hours, f_table_learn_cal[:, i], color=cols[k], linewidth=1.3,
                 label=fuel)
     ax.set_xlabel("Hour-of-day stratum")
     ax.set_ylabel(r"Marginal cost (\$/MWh)")
@@ -439,14 +495,14 @@ def fig_pjm():
         i = fuel_idx[fuel]
         ax.plot(hours, f_table_true[:, i], color=PALETTE["accent"],
                 linestyle="--", linewidth=0.9, alpha=0.7)
-        ax.plot(hours, f_table_learn[:, i], color=cols2[k], linewidth=1.3,
+        ax.plot(hours, f_table_learn_cal[:, i], color=cols2[k], linewidth=1.3,
                 label=fuel)
     ax.set_yscale("log")
     ax.set_xlabel("Hour-of-day stratum")
     ax.set_ylabel(r"Marginal cost (\$/MWh, log)")
-    ax.set_title(r"(b) Renewables (avail.\ shadow)")
+    ax.set_title("(b) Renewables (availability shadow)")
     ax.legend(loc="best")
-    fig.text(0.5, 0.005, "dashed = truth, solid = learned",
+    fig.text(0.5, 0.005, r"dashed = truth, solid = learned ($\alpha\hat f+\beta$)",
              ha="center", fontsize=7, color=PALETTE["gray"])
     fig.tight_layout(pad=0.4, rect=[0, 0.04, 1, 1])
     save_figure(fig, "pjm_recovery", OUT / "pjm_like")

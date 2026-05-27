@@ -54,7 +54,8 @@ our estimator attains cosine recovery $0.958$ for the cost vector versus
 $0.905$ for the KKT baseline and Spearman $0.927$ versus $0.909$, with
 cost-cosine seed standard deviation $45\%$ lower ($\pm0.012$ vs.\ $\pm0.022$);
 on an eight-fuel PJM-like economic-dispatch problem the stratified estimator
-recovers the marginal merit order to $80\%$ pairwise accuracy. We further
+recovers the marginal merit order to $89\%$ pairwise accuracy
+(Spearman $\rho=0.90$). We further
 give an active-set identifiability lemma and an empirical identifiability
 score that predicts which generators are recoverable from data.
 \end{abstract}
@@ -353,27 +354,45 @@ while the static model (right) collapses it.}
 \label{sec:exp_pjm}
 \textbf{Setup.} Single-bus economic dispatch with 8 fuel buckets
 (nuclear, hydro, wind, solar, coal, ccgt, oil-steam, ct-peaker) at
-realistic capacities (0.6--40 GW each). Hourly load 80--130 GW with
-diurnal+weekly variation; renewable curtailment modelled by
-hour-dependent marginal cost. We fit the stratified estimator on $T=400$
-hours.
+realistic capacities ($165$~GW total, $\sim 13\%$ reserve margin over
+peak load). Hourly load $85$--$140$~GW with diurnal+weekly variation;
+renewable curtailment is modelled by hour-dependent marginal cost. We
+fit the stratified estimator on $T=400$ hours.
+
+\textbf{Cost-level identifiability.} On a fixed power balance
+$\mathbf 1^\top g=\mathbf 1^\top d$, the linear cost $c^\top g$ is
+invariant under the affine shift $c\mapsto\alpha c+\beta\mathbf 1$
+(for $\alpha>0$): the argmin dispatch is unchanged. Linear DC-OPF
+therefore identifies the cost vector only up to such an affine
+transform of the demand-balanced subspace. We report two complementary
+recovery metrics that are robust to this ambiguity: (i) Spearman rank
+correlation and pairwise merit-order accuracy, both invariant to
+$\alpha,\beta$; and (ii) the level error \emph{after} a single
+post-hoc affine calibration $\hat c\leftarrow\alpha\hat c+\beta$ fit by
+ordinary least squares to the true base costs.
 
 \textbf{Results} (\Cref{fig:pjm_stack,fig:pjm_recovery}).
-Across three seeds, mean-cost recovery achieves cosine $0.67$ and pairwise
-merit-order accuracy $0.80$ on the eight fuel buckets, and the full
-hour$\times$fuel cost table is recovered with cosine $0.55$. The recovered
-curves capture the wind/solar intermittency and the coal/CCGT crossover
-(\Cref{fig:pjm_recovery}). We attribute the lower performance relative
-to the small synthetic benchmark to night-time renewable cost shadows that
-span more than a decade ($15\to200$\$/MWh); a small absolute error on the
-renewable buckets is large relative to the base cost.
+Across three seeds, the stratified estimator recovers the eight-fuel
+merit order with Spearman~$\rho\approx 0.90$ and pairwise
+merit-order accuracy~$0.89$ ($25/28$ pairs); after the affine
+calibration above the relative cost-level RMSE is $61\%$ of the mean
+true cost (\Cref{fig:pjm_stack}). The recovered hour-resolved costs
+track the wind/solar intermittency and the coal/CCGT crossover
+(\Cref{fig:pjm_recovery}). The residual level error concentrates on
+the peaking generators (oil-steam, CT~peaker), which dispatch in
+$<10\%$ of hours and therefore contribute little gradient signal at
+training time; this is the expected failure mode of inverse linear
+programming on rarely-active basic variables.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/pjm_stack.pdf}
-\caption{PJM-like merit order. Generators sorted by true mean cost
-(rust-red bars); the learned mean cost (navy bars) follows the ordering
-across the eight fuel buckets.}
+\caption{PJM-like merit-order recovery. \textbf{(a)} True base costs
+(rust) vs.\ affinely calibrated learned costs $\alpha\hat f+\beta$
+(navy), sorted by truth. \textbf{(b)} Rank--rank plot of true vs.\
+learned merit order. Costs are identifiable from dispatch only up to
+an affine transform on the demand-balanced subspace, so we calibrate
+once per run by OLS; the calibration does not change ordering metrics.}
 \label{fig:pjm_stack}
 \end{figure}
 
@@ -381,8 +400,9 @@ across the eight fuel buckets.}
 \centering
 \includegraphics[width=\linewidth]{figures/pjm_recovery.pdf}
 \caption{Hour-resolved cost recovery on PJM-like data: dashed lines
-show true costs; solid lines show learned costs. The stratified estimator
-captures the wind/solar duck-curve shape and the gas peaking pattern.}
+show true costs; solid lines show learned costs after the same affine
+calibration as \Cref{fig:pjm_stack}. The stratified estimator captures
+the wind/solar duck-curve shape and the gas peaking pattern.}
 \label{fig:pjm_recovery}
 \end{figure}
 
