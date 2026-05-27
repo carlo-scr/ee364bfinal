@@ -81,6 +81,14 @@ def _agg(df: pd.DataFrame, groupby: str, metric: str):
     return means, means - delta, means + delta
 
 
+def _panel_label(ax, label: str):
+    ax.text(0.02, 0.98, label, transform=ax.transAxes,
+            ha="left", va="top", fontsize=8, fontweight="bold",
+            color=PALETTE["deep"],
+            bbox=dict(facecolor="white", edgecolor="none", alpha=0.75,
+                      pad=1.5))
+
+
 # ---------------------------------------------------------------------------
 # 1. Methods comparison
 # ---------------------------------------------------------------------------
@@ -102,7 +110,7 @@ def fig_methods_comparison():
                   lo.reindex(order).values, hi.reindex(order).values, colors)
     ax.set_xticks(xs); ax.set_xticklabels(labels, rotation=32, ha="right")
     ax.set_ylabel("Clean dispatch NRMSE")
-    ax.set_title("(a) Forward-prediction error")
+    _panel_label(ax, "a")
 
     # (b) Cost recovery
     ax = axes[1]
@@ -120,7 +128,7 @@ def fig_methods_comparison():
     ax.set_xticks(xs); ax.set_xticklabels(labels, rotation=32, ha="right")
     ax.set_ylabel(r"$\cos\angle(\hat f, f^\star)$")
     ax.set_ylim(0, 1.10)
-    ax.set_title("(b) Cost-vector recovery")
+    _panel_label(ax, "b")
 
     # (c) Merit-order accuracy
     ax = axes[2]
@@ -137,12 +145,12 @@ def fig_methods_comparison():
                 color=PALETTE["gray"], style="italic")
     ax.axhline(0.5, color=PALETTE["accent"], linewidth=0.6, linestyle="--",
                alpha=0.7, zorder=0)
-    ax.text(len(order) - 0.5, 0.515, "chance", color=PALETTE["accent"],
+    ax.text(len(order) - 0.9, 0.515, "chance", color=PALETTE["accent"],
             fontsize=6, ha="right", va="bottom")
     ax.set_xticks(xs); ax.set_xticklabels(labels, rotation=32, ha="right")
     ax.set_ylabel("Merit-order accuracy")
     ax.set_ylim(0, 1.10)
-    ax.set_title("(c) Pairwise merit-order accuracy")
+    _panel_label(ax, "c")
 
     fig.tight_layout(pad=0.4)
     save_figure(fig, "methods_comparison", OUT / "methods_comparison")
@@ -161,7 +169,7 @@ def fig_methods_recovery():
     fig, axes = plt.subplots(1, 4, figsize=figsize(2.0, 1.9), sharey=True)
     xs = np.arange(len(order))
     colors = [METHOD_COLOR[m] for m in order]
-    for ax, (key, ylabel) in zip(axes, metrics):
+    for panel, (ax, (key, ylabel)) in enumerate(zip(axes, metrics), start=1):
         m, lo, hi = _agg(df, "method", key)
         mv = m.reindex(order).values.astype(float)
         lov = lo.reindex(order).values.astype(float)
@@ -171,9 +179,9 @@ def fig_methods_recovery():
                       [colors[i] for i in range(len(order)) if valid[i]])
         ax.set_xticks(xs)
         ax.set_xticklabels([METHOD_LABEL[m] for m in order], rotation=32, ha="right")
-        ax.set_title(ylabel, fontsize=7)
+        ax.set_ylabel(ylabel)
+        _panel_label(ax, chr(ord("a") + panel - 1))
         ax.set_ylim(0.7, 1.05)
-    axes[0].set_ylabel("Score")
     fig.tight_layout(pad=0.3)
     save_figure(fig, "methods_recovery", OUT / "methods_comparison")
 
@@ -191,10 +199,10 @@ def fig_identifiability():
     apply_paper_style()
     fig, axes = plt.subplots(1, 2, figsize=figsize(2.0, 2.0))
 
-    for ax, ycol, title in [
-        (axes[0], "f_rel_err", r"(a) $|\hat f_i - f_i^\star|/|f_i^\star|$"),
-        (axes[1], "gmax_rel_err",
-         r"(b) $|\hat g_{\max,i} - g_{\max,i}^\star|/g_{\max,i}^\star$"),
+    for label, ax, ycol, ylabel in [
+        ("a", axes[0], "f_rel_err", r"$|\hat f_i - f_i^\star|/|f_i^\star|$"),
+        ("b", axes[1], "gmax_rel_err",
+         r"$|\hat g_{\max,i} - g_{\max,i}^\star|/g_{\max,i}^\star$"),
     ]:
         ax.scatter(df["id_score"], df[ycol], s=10,
                    color=PALETTE["mid"], alpha=0.7, edgecolors=PALETTE["navy"],
@@ -210,7 +218,8 @@ def fig_identifiability():
         ax.plot(means_x, means_y, "o-", color=PALETTE["accent"],
                 markersize=4, linewidth=1.0, label="bin mean")
         ax.set_xlabel(r"Identifiability score $s_i$")
-        ax.set_title(title)
+        ax.set_ylabel(ylabel)
+        _panel_label(ax, label)
         ax.legend(loc="upper right")
     fig.tight_layout(pad=0.4)
     save_figure(fig, "identifiability", OUT / "identifiability")
@@ -231,8 +240,8 @@ def fig_diurnal():
     if "f_table_strat_cal" in arr.files:
         f_strat = arr["f_table_strat_cal"]
         f_static = arr["f_static_cal"]
-        strat_title = r"(b) Stratified $\alpha\hat f^{(s)}+\beta$"
-        static_title = r"(c) Static $\alpha\hat f+\beta$"
+        strat_title = "stratified calibrated"
+        static_title = "static calibrated"
     else:
         f_strat = arr["f_table_strat"]
         f_static = arr["f_static"]
@@ -242,8 +251,8 @@ def fig_diurnal():
         alpha, beta = np.linalg.lstsq(A, f_true.reshape(-1), rcond=None)[0]
         f_strat = alpha * f_strat + beta
         f_static = alpha * f_static + beta
-        strat_title = r"(b) Stratified $\alpha\hat f^{(s)}+\beta$"
-        static_title = r"(c) Static $\alpha\hat f+\beta$"
+        strat_title = "stratified calibrated"
+        static_title = "static calibrated"
     n_strata, n_gen = f_true.shape
     static_table = np.tile(f_static, (n_strata, 1))
 
@@ -253,17 +262,21 @@ def fig_diurnal():
     vmin = float(min(f_true.min(), f_strat.min(), static_table.min()))
     vmax = float(max(f_true.max(), f_strat.max(), static_table.max()))
     panels = [
-        (axes[0], f_true.T,       r"(a) True $f^{(s)}$"),
-        (axes[1], f_strat.T,      strat_title),
-        (axes[2], static_table.T, static_title + " (replicated)"),
+        ("a", axes[0], f_true.T,       "truth"),
+        ("b", axes[1], f_strat.T,      strat_title),
+        ("c", axes[2], static_table.T, static_title),
     ]
     im = None
-    for ax, mat, title in panels:
+    for label, ax, mat, title in panels:
         im = ax.imshow(mat, aspect="auto", cmap=NAVY_CMAP,
                        vmin=vmin, vmax=vmax, origin="lower",
                        interpolation="nearest")
         ax.set_xlabel("Hour-of-day stratum")
-        ax.set_title(title)
+        _panel_label(ax, label)
+        ax.text(0.98, 0.98, title, transform=ax.transAxes,
+                ha="right", va="top", fontsize=7, color=PALETTE["deep"],
+                bbox=dict(facecolor="white", edgecolor="none", alpha=0.75,
+                          pad=1.5))
         ax.grid(False)
     axes[0].set_ylabel("Generator index")
     cax = fig.add_axes([0.92, 0.18, 0.015, 0.66])
@@ -292,7 +305,6 @@ def fig_diurnal():
     ax.legend(handles=handles, loc="best", ncol=1)
     ax.set_xlabel("Hour-of-day stratum")
     ax.set_ylabel(r"Marginal cost $f$")
-    ax.set_title("Per-generator diurnal recovery")
     fig.tight_layout(pad=0.3)
     save_figure(fig, "diurnal_curves", OUT / "diurnal")
 
@@ -339,7 +351,9 @@ def fig_mef_validation():
     ax.set_ylabel(r"Autograd $\partial g^\star/\partial d$")
     # Quantify agreement on the kept (smooth) entries.
     rel = float(np.linalg.norm(fd_p - ag_p) / max(np.linalg.norm(fd_p), 1e-9))
-    ax.set_title(f"(a) Jacobian validation (smooth rows, rel.err {rel:.3f})")
+    _panel_label(ax, "a")
+    ax.text(0.98, 0.04, f"rel. err. {rel:.3f}", transform=ax.transAxes,
+            ha="right", va="bottom", fontsize=7, color=PALETTE["deep"])
 
     ax = axes[1]
     lo = float(mef_true.min()); hi = float(mef_true.max())
@@ -358,7 +372,7 @@ def fig_mef_validation():
     ax.set_aspect("equal", adjustable="box")
     ax.set_xlabel(r"True MEF (tCO$_2$/MWh)")
     ax.set_ylabel("Estimated MEF")
-    ax.set_title("(b) Downstream MEF accuracy")
+    _panel_label(ax, "b")
     ax.legend(loc="upper left")
 
     fig.tight_layout(pad=0.4)
@@ -385,7 +399,7 @@ def _sweep_plot(name, xlabel, xlogscale=True):
                "(a) Cost recovery"),
               (axes[1], "val_nrmse_clean", "Clean dispatch NRMSE",
                "(b) Forward-prediction error")]
-    for ax, key, ylab, title in panels:
+    for label, (ax, key, ylab, title) in zip(["a", "b"], panels):
         for m in methods:
             sub = df[df["method"] == m].sort_values("x")
             ax.plot(sub["x"], sub[f"{key}_mean"], marker=markers[m],
@@ -401,7 +415,7 @@ def _sweep_plot(name, xlabel, xlogscale=True):
             ax.set_xscale("log")
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylab)
-        ax.set_title(title)
+        _panel_label(ax, label)
     axes[0].legend(loc="lower right")
     fig.tight_layout(pad=0.4)
     save_figure(fig, name, OUT / name)
@@ -474,8 +488,13 @@ def fig_pjm():
     ax.set_xticklabels([PJM_FUEL_NAMES[i] for i in order],
                        rotation=30, ha="right", fontsize=7)
     ax.set_ylabel(r"Marginal cost (\$/MWh)")
-    ax.set_title(rf"(a) Affine-calibrated: $\alpha{{=}}{alpha:.2f}$, "
-                 rf"$\beta{{=}}{beta:.1f}$, rel. RMSE {rel_rmse:.0%}")
+    _panel_label(ax, "a")
+    ax.text(0.98, 0.96,
+            f"$\\alpha={alpha:.2f}$, $\\beta={beta:.1f}$\nrel. RMSE {rel_rmse:.0%}",
+            transform=ax.transAxes, ha="right", va="top", fontsize=6.5,
+            color=PALETTE["deep"],
+            bbox=dict(facecolor="white", edgecolor=PALETTE["gray"],
+                      linewidth=0.3, alpha=0.85, boxstyle="round,pad=0.2"))
     ax.legend(loc="upper left", fontsize=7)
 
     # (b) Rank-rank plot
@@ -492,8 +511,10 @@ def fig_pjm():
                     xytext=(4, -2), textcoords="offset points", fontsize=6)
     ax.set_xlabel("true merit rank")
     ax.set_ylabel("learned merit rank")
-    ax.set_title(rf"(b) Merit order: Spearman $\rho{{=}}{spear:.2f}$, "
-                 f"{pair_correct}/{n_pairs} pairs")
+    _panel_label(ax, "b")
+    ax.text(0.98, 0.04, rf"$\rho={spear:.2f}$, {pair_correct}/{n_pairs} pairs",
+            transform=ax.transAxes, ha="right", va="bottom", fontsize=6.5,
+            color=PALETTE["deep"])
     ax.set_xticks(np.arange(1, n_fuel + 1))
     ax.set_yticks(np.arange(1, n_fuel + 1))
     ax.set_aspect("equal")
@@ -518,7 +539,7 @@ def fig_pjm():
                 label=fuel)
     ax.set_xlabel("Hour-of-day stratum")
     ax.set_ylabel(r"Marginal cost (\$/MWh)")
-    ax.set_title("(a) Dispatchable fuels")
+    _panel_label(ax, "a")
     ax.legend(loc="best")
 
     ax = axes[1]
@@ -532,7 +553,7 @@ def fig_pjm():
     ax.set_yscale("log")
     ax.set_xlabel("Hour-of-day stratum")
     ax.set_ylabel(r"Marginal cost (\$/MWh, log)")
-    ax.set_title("(b) Renewables (availability shadow)")
+    _panel_label(ax, "b")
     ax.legend(loc="best")
     fig.text(0.5, 0.005, r"dashed = truth, solid = learned ($\alpha\hat f+\beta$)",
              ha="center", fontsize=7, color=PALETTE["gray"])
@@ -569,7 +590,6 @@ def fig_timing():
     ax.set_xscale("log")
     ax.set_xlabel("Training time (s, log scale)")
     ax.set_ylabel("Clean dispatch NRMSE")
-    ax.set_title("Accuracy–speed trade-off")
     ax.legend(loc="upper right", fontsize=6.5)
     fig.tight_layout(pad=0.3)
     save_figure(fig, "timing", OUT / "timing")
@@ -588,7 +608,7 @@ def fig_warmstart():
     colors = [METHOD_COLOR[m] for m in order]
     labels = [METHOD_LABEL[m] for m in order]
 
-    def _dot_ci(ax, metric, xlabel, title, logx=False):
+    def _dot_ci(ax, metric, xlabel, label, logx=False):
         m, lo, hi = _agg(df, "method", metric)
         means = m.reindex(order).values
         los = lo.reindex(order).values
@@ -600,17 +620,17 @@ def fig_warmstart():
                         ecolor=col, elinewidth=1.4, capsize=4, capthick=1.0)
         ax.set_yticks(ys); ax.set_yticklabels(labels)
         ax.set_xlabel(xlabel)
-        ax.set_title(title)
+        _panel_label(ax, label)
         ax.invert_yaxis()
         if logx:
             ax.set_xscale("log")
         ax.grid(axis="x", linewidth=0.4, alpha=0.5)
 
     _dot_ci(axes[0], "val_nrmse_clean",
-            "Clean dispatch NRMSE", "(a) Prediction accuracy (95% CI)")
+            "Clean dispatch NRMSE", "a")
     time_col = "total_s" if "total_s" in df.columns else "elapsed_s"
     _dot_ci(axes[1], time_col,
-            "Training time (s, log scale)", "(b) Wall-clock time (95% CI)",
+            "Training time (s, log scale)", "b",
             logx=True)
 
     fig.tight_layout(pad=0.4)
@@ -639,14 +659,14 @@ def fig_kmeans():
         if metric not in df.columns:
             ax.text(0.5, 0.5, "n/a", ha="center", va="center",
                     transform=ax.transAxes, fontsize=9, color=PALETTE["gray"])
-            ax.set_title(title)
+            _panel_label(ax, title[1])
             continue
         m, lo, hi = _agg(df, "method", metric)
         _bar_with_err(ax, xs, m.reindex(order).values,
                       lo.reindex(order).values, hi.reindex(order).values, colors)
         ax.set_xticks(xs); ax.set_xticklabels(labels, rotation=28, ha="right")
         ax.set_ylabel(ylabel)
-        ax.set_title(title)
+        _panel_label(ax, title[1])
 
     fig.tight_layout(pad=0.4)
     save_figure(fig, "kmeans_strata", OUT / "kmeans_strata")
@@ -664,12 +684,12 @@ def fig_epsilon_sweep():
 
     color = PALETTE["navy"]
 
-    for ax, metric, ylabel, title, ycap in [
+    for label, (ax, metric, ylabel, title, ycap) in zip(["a", "b"], [
         (axes[0], "val_nrmse_clean", "Clean dispatch NRMSE",
          r"(a) NRMSE vs.\ $\varepsilon$", 0.16),
         (axes[1], "f_cos",          r"$\cos\angle(\hat f, f^\star)$",
          r"(b) Cost cosine vs.\ $\varepsilon$", None),
-    ]:
+    ]):
         grp = df.groupby("eps")[metric]
         means = grp.mean().reindex(eps_vals)
         stds = grp.std(ddof=1).reindex(eps_vals)
@@ -686,7 +706,7 @@ def fig_epsilon_sweep():
         ax.set_xscale("log")
         ax.set_xlabel(r"$\varepsilon$ (insensitivity margin, log scale)")
         ax.set_ylabel(ylabel)
-        ax.set_title(title)
+        _panel_label(ax, label)
         ax.grid(linewidth=0.4, alpha=0.5)
         if ycap is not None:
             top = float(means.iloc[-1])
@@ -735,7 +755,7 @@ def fig_counterfactual():
                alpha=0.8, label="in-sample scale")
     ax.set_xlabel("Demand scale factor")
     ax.set_ylabel(r"Relative CO$_2$ error")
-    ax.set_title(r"(a) CO$_2$ error vs.\ demand scale")
+    _panel_label(ax, "a")
     ax.legend(fontsize=6.5)
 
     # (b) true vs recovered CO2 emissions scatter
@@ -755,7 +775,7 @@ def fig_counterfactual():
                     color=PALETTE["deep"])
     ax.set_xlabel(r"True CO$_2$ (kg)")
     ax.set_ylabel(r"Estimated CO$_2$ (kg)")
-    ax.set_title(r"(b) True vs.\ estimated CO$_2$")
+    _panel_label(ax, "b")
     cb = fig.colorbar(sc, ax=ax, shrink=0.8)
     cb.set_label("demand scale", fontsize=6)
     cb.ax.tick_params(labelsize=6)
@@ -808,7 +828,6 @@ def fig_mef_exp():
                           linewidth=0.4, boxstyle="round,pad=0.25"))
     ax.set_xlabel(r"True MEF (kg CO$_2$/MWh)")
     ax.set_ylabel(r"Estimated MEF (kg CO$_2$/MWh)")
-    ax.set_title("MEF point recovery (per-bus + system)")
     ax.legend(fontsize=6.5, loc="lower right")
 
     fig.tight_layout(pad=0.4)

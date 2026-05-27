@@ -8,14 +8,14 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage{subcaption}
 \usepackage{cleveref}
-\crefname{figure}{Fig.}{Figs.}
-\Crefname{figure}{Fig.}{Figs.}
+\crefname{figure}{Figure}{Figures}
+\Crefname{figure}{Figure}{Figures}
 \crefname{table}{Table}{Tables}
 \Crefname{table}{Table}{Tables}
-\crefname{equation}{Eq.}{Eqs.}
-\Crefname{equation}{Eq.}{Eqs.}
-\crefname{section}{Sec.}{Secs.}
-\Crefname{section}{Sec.}{Secs.}
+\crefname{equation}{Equation}{Equations}
+\Crefname{equation}{Equation}{Equations}
+\crefname{section}{Section}{Sections}
+\Crefname{section}{Section}{Sections}
 \usepackage{cite}
 
 \newtheorem{lemma}{Lemma}
@@ -207,9 +207,10 @@ allowing diurnal variation in the merit order. Dropping the strata recovers
 a static estimator.
 
 \subsection{KKT-Residual Baseline}
-Following~\cite{keshavarz2011imputing} we recover line flows from the
-balance equation, fix capacities to the inflated empirical maxima
-($1.05 \cdot \max_t g_t^{\mathrm{obs}}$), and solve a single convex QP in
+We follow Keshavarz, Wang, and Boyd~\cite{keshavarz2011imputing} by
+recovering line flows from the balance equation, fixing capacities to the
+inflated empirical maxima ($1.05 \cdot \max_t g_t^{\mathrm{obs}}$), and
+solving a single convex QP in
 $(f,\nu,\mu)$ that minimises the squared stationarity residual subject to
 the active-set masks induced by observed boundary contacts.
 
@@ -346,7 +347,7 @@ fit by OLS to the true table.
 \textbf{Results} (\Cref{fig:diurnal_heatmap}). After affine
 calibration the stratified estimator recovers the diurnal cost table
 with RMSE $7.2$ (mean over 3 seeds), while the static model---forced
-to a single per-generator cost---can only attain RMSE $12.4$ even
+to a single per-generator cost---attains at best RMSE $12.4$ even
 after the same calibration. The static panel (c) cannot reproduce the
 day/night re-ordering visible in the truth (panel (a)); the stratified
 model does (panel (b)).
@@ -604,35 +605,35 @@ implicit-differentiation baseline of Fuentes-Valenzuela and Degleris with
 fixed capacities, and pure regression baselines on synthetic networks and
 a PJM-like economic dispatch problem. The differentiable estimator achieves
 cosine $0.958$ on cost recovery vs.\ $0.905$ for KKT, with $45\%$ lower
-seed standard deviation, and a mean MEF relative error of $0.08$. Future
+seed standard deviation, and a mean MEF relative error of $0.22$. Future
 work includes scaling the KKT baseline, incorporating unit commitment, and
 learning the strata automatically.
 
 \bibliographystyle{IEEEtran}
 \begin{thebibliography}{9}
 \bibitem{keshavarz2011imputing}
-A.~Keshavarz, Y.~Wang, and S.~Boyd, ``Imputing a convex objective
-function,'' in \emph{IEEE Multi-Conference on Systems and Control},
+A.~Keshavarz, Y.~Wang, and S.~Boyd, ``Imputing a Convex Objective
+Function,'' in \emph{IEEE Multi-Conference on Systems and Control},
 2011, pp. 613--619.
 
 \bibitem{agrawal2019differentiable}
 A.~Agrawal, B.~Amos, S.~Barratt, S.~Boyd, S.~Diamond, and J.~Z. Kolter,
-``Differentiable convex optimization layers,'' in \emph{Advances in
+``Differentiable Convex Optimization Layers,'' in \emph{Advances in
 Neural Information Processing Systems}, 2019, pp. 9558--9570.
 
 \bibitem{fuentes2024}
-P.~Fuentes-Valenzuela and A.~Degleris, ``Learning marginal emission
-factors via differentiable optimization,'' \emph{arXiv preprint
+P.~Fuentes-Valenzuela and A.~Degleris, ``Learning Marginal Emission
+Factors via Differentiable Optimization,'' \emph{arXiv preprint
 arXiv:2402.00000}, 2024.
 
 \bibitem{ahuja2001inverse}
-R.~K. Ahuja and J.~B. Orlin, ``Inverse optimization,''
+R.~K. Ahuja and J.~B. Orlin, ``Inverse Optimization,''
 \emph{Operations Research}, vol. 49, no. 5, pp. 771--783, 2001.
 
 \bibitem{esfahani2018data}
 P.~M. Esfahani, S.~Shafieezadeh-Abadeh, G.~A. Hanasusanto, and
-D.~Kuhn, ``Data-driven inverse optimization with imperfect
-information,'' \emph{Mathematical Programming}, vol. 167, no. 1,
+D.~Kuhn, ``Data-Driven Inverse Optimization with Imperfect
+Information,'' \emph{Mathematical Programming}, vol. 167, no. 1,
 pp. 191--234, 2018.
 
 \bibitem{boyd2004convex}
