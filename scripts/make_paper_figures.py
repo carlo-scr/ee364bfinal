@@ -584,28 +584,34 @@ def fig_warmstart():
 
     apply_paper_style()
     fig, axes = plt.subplots(1, 2, figsize=figsize(2.0, 2.0))
-    xs = np.arange(len(order))
+    ys = np.arange(len(order))
     colors = [METHOD_COLOR[m] for m in order]
     labels = [METHOD_LABEL[m] for m in order]
 
-    # (a) NRMSE
-    ax = axes[0]
-    m, lo, hi = _agg(df, "method", "val_nrmse_clean")
-    _bar_with_err(ax, xs, m.reindex(order).values,
-                  lo.reindex(order).values, hi.reindex(order).values, colors)
-    ax.set_xticks(xs); ax.set_xticklabels(labels, rotation=28, ha="right")
-    ax.set_ylabel("Clean dispatch NRMSE")
-    ax.set_title("(a) Prediction accuracy")
+    def _dot_ci(ax, metric, xlabel, title, logx=False):
+        m, lo, hi = _agg(df, "method", metric)
+        means = m.reindex(order).values
+        los = lo.reindex(order).values
+        his = hi.reindex(order).values
+        for i, (mu, l, h, col) in enumerate(zip(means, los, his, colors)):
+            ax.errorbar(mu, ys[i], xerr=[[mu - l], [h - mu]],
+                        fmt="o", color=col, markersize=7,
+                        markeredgecolor=PALETTE["navy"], markeredgewidth=0.6,
+                        ecolor=col, elinewidth=1.4, capsize=4, capthick=1.0)
+        ax.set_yticks(ys); ax.set_yticklabels(labels)
+        ax.set_xlabel(xlabel)
+        ax.set_title(title)
+        ax.invert_yaxis()
+        if logx:
+            ax.set_xscale("log")
+        ax.grid(axis="x", linewidth=0.4, alpha=0.5)
 
-    # (b) Training time
-    ax = axes[1]
+    _dot_ci(axes[0], "val_nrmse_clean",
+            "Clean dispatch NRMSE", "(a) Prediction accuracy (95% CI)")
     time_col = "total_s" if "total_s" in df.columns else "elapsed_s"
-    m, lo, hi = _agg(df, "method", time_col)
-    _bar_with_err(ax, xs, m.reindex(order).values,
-                  lo.reindex(order).values, hi.reindex(order).values, colors)
-    ax.set_xticks(xs); ax.set_xticklabels(labels, rotation=28, ha="right")
-    ax.set_ylabel("Training time (s)")
-    ax.set_title("(b) Wall-clock time")
+    _dot_ci(axes[1], time_col,
+            "Training time (s, log scale)", "(b) Wall-clock time (95% CI)",
+            logx=True)
 
     fig.tight_layout(pad=0.4)
     save_figure(fig, "warmstart", OUT / "warmstart")
@@ -656,36 +662,46 @@ def fig_epsilon_sweep():
     apply_paper_style()
     fig, axes = plt.subplots(1, 2, figsize=figsize(2.0, 2.0))
 
-    cols = _ordered_blues(len(df["method"].unique()))
-    method_list = sorted(df["method"].unique())
+    color = PALETTE["navy"]
 
-    for ax, metric, ylabel, title in [
+    for ax, metric, ylabel, title, ycap in [
         (axes[0], "val_nrmse_clean", "Clean dispatch NRMSE",
-         r"(a) NRMSE vs.\ $\varepsilon$"),
+         r"(a) NRMSE vs.\ $\varepsilon$", 0.16),
         (axes[1], "f_cos",          r"$\cos\angle(\hat f, f^\star)$",
-         r"(b) Cost cosine vs.\ $\varepsilon$"),
+         r"(b) Cost cosine vs.\ $\varepsilon$", None),
     ]:
-        for k, method in enumerate(method_list):
-            sub = df[df["method"] == method]
-            grp = sub.groupby("eps")[metric]
-            means = grp.mean().reindex(eps_vals)
-            stds = grp.std(ddof=1).reindex(eps_vals)
-            ns = grp.count().reindex(eps_vals)
-            delta = 1.96 * stds / np.sqrt(ns.clip(lower=1))
-            ax.plot(eps_vals, means.values, "o-",
-                    color=cols[k], linewidth=1.3, markersize=4,
-                    markeredgecolor=PALETTE["navy"], markeredgewidth=0.4,
-                    label=method)
-            ax.fill_between(eps_vals,
-                            (means - delta).values,
-                            (means + delta).values,
-                            color=cols[k], alpha=0.18, linewidth=0)
+        grp = df.groupby("eps")[metric]
+        means = grp.mean().reindex(eps_vals)
+        stds = grp.std(ddof=1).reindex(eps_vals)
+        ns = grp.count().reindex(eps_vals)
+        delta = 1.96 * stds / np.sqrt(ns.clip(lower=1))
+        ax.plot(eps_vals, means.values, "o-",
+                color=color, linewidth=1.5, markersize=5,
+                markeredgecolor=PALETTE["deep"], markeredgewidth=0.5,
+                zorder=3)
+        ax.fill_between(eps_vals,
+                        (means - delta).values,
+                        (means + delta).values,
+                        color=PALETTE["mid"], alpha=0.30, linewidth=0)
         ax.set_xscale("log")
         ax.set_xlabel(r"$\varepsilon$ (insensitivity margin, log scale)")
         ax.set_ylabel(ylabel)
         ax.set_title(title)
+        ax.grid(linewidth=0.4, alpha=0.5)
+        if ycap is not None:
+            top = float(means.iloc[-1])
+            if top > ycap:
+                ax.set_ylim(top=ycap)
+                # annotate clipped outlier
+                ax.annotate(
+                    f"{top:.2f} (off-scale)",
+                    xy=(eps_vals[-1], ycap),
+                    xytext=(eps_vals[-1], ycap * 0.92),
+                    ha="right", va="top",
+                    fontsize=6.5, color=PALETTE["accent"],
+                    arrowprops=dict(arrowstyle="->",
+                                    color=PALETTE["accent"], lw=0.7))
 
-    axes[0].legend(loc="upper left", fontsize=6.5)
     fig.tight_layout(pad=0.4)
     save_figure(fig, "epsilon_sweep", OUT / "epsilon_sweep")
 
@@ -758,10 +774,9 @@ def fig_mef_exp():
         return
 
     apply_paper_style()
-    fig, axes = plt.subplots(1, 2, figsize=figsize(2.0, 2.0))
+    fig, ax = plt.subplots(1, 1, figsize=figsize(1.0, 1.6))
 
-    # (a) scatter: per-bus MEF true vs estimated (denser) + system point per seed
-    ax = axes[0]
+    # scatter: per-bus MEF true vs estimated (denser) + system point per seed
     if "scope" in df.columns:
         df_bus = df[df["scope"] == "bus"]
         df_sys = df[df["scope"] == "system"]
@@ -773,31 +788,28 @@ def fig_mef_exp():
     lo = float(min(pool_x.min(), pool_y.min())); hi = float(max(pool_x.max(), pool_y.max()))
     pad = 0.05 * (hi - lo + 1e-9)
     ax.plot([lo - pad, hi + pad], [lo - pad, hi + pad],
-            color=PALETTE["accent"], linewidth=0.8, zorder=1)
+            color=PALETTE["accent"], linewidth=0.8, zorder=1, label=r"$y=x$")
     if not df_bus.empty:
         ax.scatter(df_bus["mef_true"], df_bus["mef_rec"],
-                   s=18, c=PALETTE["mid"], alpha=0.55,
+                   s=22, c=PALETTE["mid"], alpha=0.6,
                    edgecolors="none", label="per-bus", zorder=2)
     ax.scatter(df_sys["mef_true"], df_sys["mef_rec"],
-               s=70, c=PALETTE["navy"], edgecolors="white", linewidths=0.6,
+               s=80, c=PALETTE["navy"], edgecolors="white", linewidths=0.6,
                marker="D", label="system (per seed)", zorder=4)
+    # annotate aggregate rel-err
+    m, lo_ci, hi_ci = _agg(df, "method", "mef_rel_err")
+    if len(m) > 0:
+        mu = float(m.iloc[0]); l = float(lo_ci.iloc[0]); h = float(hi_ci.iloc[0])
+        ax.text(0.04, 0.96,
+                f"rel. MEF error = {mu:.2f}\n95% CI [{l:.2f}, {h:.2f}]",
+                transform=ax.transAxes, ha="left", va="top",
+                fontsize=7.5, color=PALETTE["deep"],
+                bbox=dict(facecolor="white", edgecolor=PALETTE["gray"],
+                          linewidth=0.4, boxstyle="round,pad=0.25"))
     ax.set_xlabel(r"True MEF (kg CO$_2$/MWh)")
     ax.set_ylabel(r"Estimated MEF (kg CO$_2$/MWh)")
-    ax.set_title("(a) MEF point recovery")
-    ax.legend(fontsize=6.5, loc="best")
-
-    # (b) relative error bar
-    ax = axes[1]
-    m, lo_ci, hi_ci = _agg(df, "method", "mef_rel_err")
-    methods = list(m.index)
-    xs = np.arange(len(methods))
-    _bar_with_err(ax, xs, m.values, lo_ci.values, hi_ci.values,
-                  [METHOD_COLOR.get(mt, PALETTE["mid"]) for mt in methods])
-    ax.set_xticks(xs)
-    ax.set_xticklabels([METHOD_LABEL.get(mt, mt) for mt in methods],
-                       rotation=28, ha="right")
-    ax.set_ylabel("Relative MEF error")
-    ax.set_title("(b) MEF relative error")
+    ax.set_title("MEF point recovery (per-bus + system)")
+    ax.legend(fontsize=6.5, loc="lower right")
 
     fig.tight_layout(pad=0.4)
     save_figure(fig, "mef_exp", OUT / "mef")

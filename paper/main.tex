@@ -282,7 +282,7 @@ Diff.\ (strat.)     & $0.206$ & $.944{\pm}.018$ & $.894{\pm}.064$ & $.998$ \\
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/methods_comparison.pdf}
 \caption{Headline comparison of all six methods on a 10-bus synthetic
@@ -291,9 +291,9 @@ recovery of the cost vector $\hat f$ (b), and merit-order accuracy (c).
 Regression baselines overfit observation noise and do not recover the
 cost structure; ``n/a'' marks baselines for which $f$ is undefined.}
 \label{fig:methods_comparison}
-\end{figure}
+\end{figure*}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/methods_recovery.pdf}
 \caption{Per-parameter recovery scores across four inverse-optimisation
@@ -301,7 +301,7 @@ methods. Cosine, Spearman, and merit-order accuracy on $\hat f$, plus
 cosine on $\hat g_{\max}$. The differentiable estimator recovers capacities
 nearly exactly while remaining competitive on cost recovery.}
 \label{fig:methods_recovery}
-\end{figure}
+\end{figure*}
 
 \subsection{Identifiability Validation}
 \label{sec:exp_ident}
@@ -317,13 +317,18 @@ joint distribution with marginal histograms and a linear regression overlay.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/identifiability.pdf}
-\caption{Per-generator cost (top) and capacity (bottom) recovery error
-vs.\ the strictly-interior fraction $s_i$, with marginal histograms on
-each axis and an OLS regression line. Cost recovery error is strongly
-predicted by identifiability ($\rho_{\text{Spearman}}\!=\!0.58$ for $f$,
-$n{=}36$ generators); capacity error is uncorrelated
-($\rho\!=\!-0.11$) because $\hat g_{\max,i}$ is fit from the boundary
-samples that drive low $s_i$ rather than the interior ones.}
+\caption{Per-generator cost (a) and capacity (b) recovery error vs.\
+the strictly-interior fraction $s_i$, with marginal histograms and a
+bin-mean curve. Higher $s_i$ means a generator is interior at the
+optimum more often---i.e.\ its capacity rarely binds, so the
+KKT system pins only one combined dual price for all interior
+generators and the cost \emph{level} of each one becomes
+non-identifiable up to the $c\!\mapsto\!\alpha c+\beta\mathbf 1$
+ambiguity of \Cref{sec:exp_pjm}. Empirically this drives a strong
+positive trend in (a) (Spearman $\rho\!=\!0.58$, $n{=}36$): the more
+interior a generator is, the worse its level recovery. Capacity error
+in (b) is uncorrelated ($\rho\!=\!-0.11$) because $\hat g_{\max,i}$ is
+fit from boundary samples that drive low $s_i$.}
 \label{fig:identifiability}
 \end{figure}
 
@@ -486,8 +491,10 @@ trade-off when training time is limited.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/warmstart.pdf}
-\caption{KKT-warmstart vs.\ cold-start comparison (5 seeds, 95\% CI).
-(a) Clean dispatch NRMSE; (b) wall-clock training time. Warmstart matches
+\caption{KKT-warmstart vs.\ cold-start comparison (5 seeds, 95\% CI),
+shown as horizontal dot plots so CI overlap is explicit.
+(a) Clean dispatch NRMSE; (b) wall-clock training time (log scale).
+Warmstart matches
 cold-start accuracy while reducing training time by $6\times$.}
 \label{fig:warmstart}
 \end{figure}
@@ -541,20 +548,23 @@ emissions; colour encodes demand scale.}
 
 \subsection{Marginal Emission Factor Recovery}
 \label{sec:exp_mef}
-\Cref{fig:mef_exp} plots system-wide and per-bus MEF point estimates
-alongside a bar chart of relative MEF error. Across 5 seeds the
-differentiable estimator achieves a mean relative MEF error of $0.22$
-($95\%$ CI $[0.17,\,0.28]$) with system-wide MEFs spanning
-$\approx 280$--$770$~kg\,CO$_2$/MWh, confirming that the recovered cost
-parameters support accurate downstream MEF calculations.
+\Cref{fig:mef_exp} shows system-wide and per-bus MEF point estimates.
+Across 5 seeds the differentiable estimator achieves a mean relative
+MEF error of $0.22$ ($95\%$ CI $[0.17,\,0.28]$) with system-wide MEFs
+spanning $\approx 280$--$770$~kg\,CO$_2$/MWh, confirming that the
+recovered cost parameters support accurate downstream MEF calculations.
+The caps-fixed F\&D-style baseline that uses the true capacities
+achieves cosine $0.97$ and RMSE $0.12$ (cf.\ \Cref{sec:exp_sensitivity}),
+so the residual MEF error is dominated by the unavoidable
+active-set quantisation of merit-order DC-OPF rather than by errors in
+the learned costs or capacities.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{figures/mef_exp.pdf}
-\caption{MEF recovery across 5 seeds. (a) True vs.\ estimated MEFs:
-small navy points are per-bus MEFs (40 = 8 buses $\times$ 5 seeds),
-large diamond markers are system-wide MEFs per seed. (b) Relative MEF
-error per method (95\% CI).}
+\includegraphics[width=0.85\linewidth]{figures/mef_exp.pdf}
+\caption{MEF recovery across 5 seeds. Small navy points are per-bus
+MEFs (40 = 8 buses $\times$ 5 seeds), large diamond markers are
+system-wide MEFs per seed; rust line is $y=x$.}
 \label{fig:mef_exp}
 \end{figure}
 
