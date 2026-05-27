@@ -59,6 +59,7 @@ def make_synthetic_dataset(
     physics: str = "transport",
     diurnal_amp: float = 0.0,
     diurnal_cost_amp: float = 0.25,
+    gmax_abs_range: tuple[float, float] | None = None,
 ) -> SyntheticDataset:
     rng = np.random.default_rng(seed)
     incidence = random_connected_incidence(n_buses, n_lines, rng)
@@ -85,9 +86,24 @@ def make_synthetic_dataset(
     true_f = true_f_table.mean(axis=0)
 
     peak_demand = np.max(d_total, axis=0)
-    g_low = max(1.05, float(gmax_scale[0]))
-    g_high = max(g_low + 1e-6, float(gmax_scale[1]))
-    true_gmax = rng.uniform(g_low, g_high, size=(n_buses,)) * peak_demand
+    if gmax_abs_range is not None:
+        # Absolute (tight) capacity sampling, independent of peak demand.
+        # Used by the identifiability experiment to ensure many generators
+        # actually bind their capacity constraint.
+        g_lo, g_hi = float(gmax_abs_range[0]), float(gmax_abs_range[1])
+        true_gmax = rng.uniform(g_lo, g_hi, size=(n_buses,))
+        # Guarantee feasibility: total capacity must exceed peak total demand
+        # by a small slack. If not, scale uniformly upward (preserves the
+        # relative tight/loose pattern across generators).
+        peak_total = float(np.sum(d_total, axis=1).max())
+        cap_total = float(true_gmax.sum())
+        required = 1.05 * peak_total
+        if cap_total < required:
+            true_gmax = true_gmax * (required / cap_total)
+    else:
+        g_low = max(1.05, float(gmax_scale[0]))
+        g_high = max(g_low + 1e-6, float(gmax_scale[1]))
+        true_gmax = rng.uniform(g_low, g_high, size=(n_buses,)) * peak_demand
 
     p_low = max(0.8, float(pmax_scale[0]))
     p_high = max(p_low + 1e-6, float(pmax_scale[1]))

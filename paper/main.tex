@@ -6,6 +6,16 @@
 \usepackage{booktabs}
 \usepackage{xcolor}
 \usepackage[hidelinks]{hyperref}
+\usepackage{subcaption}
+\usepackage{cleveref}
+\crefname{figure}{Fig.}{Figs.}
+\Crefname{figure}{Fig.}{Figs.}
+\crefname{table}{Table}{Tables}
+\Crefname{table}{Table}{Tables}
+\crefname{equation}{Eq.}{Eqs.}
+\Crefname{equation}{Eq.}{Eqs.}
+\crefname{section}{Sec.}{Secs.}
+\Crefname{section}{Sec.}{Secs.}
 \usepackage{cite}
 
 \newtheorem{lemma}{Lemma}
@@ -28,25 +38,25 @@ Spring 2025}}
 \maketitle
 
 \begin{abstract}
-We study the inverse DC optimal power flow (DC-OPF) problem: given a sequence
-of demand--dispatch pairs $\{(d_t,g_t)\}_{t=1}^T$ produced by an unknown
-linear merit-order DC-OPF, recover the per-generator marginal costs
-$f\opt$, generator capacities $g_{\max}\opt$, and line capacities
+We study the inverse direct-current optimal power flow (DC-OPF) problem:
+given a sequence of demand--dispatch pairs $\{(d_t,g_t)\}_{t=1}^T$ produced
+by an unknown linear merit-order DC-OPF, recover the per-generator marginal
+costs $f\opt$, generator capacities $g_{\max}\opt$, and line capacities
 $p_{\max}\opt$. We pose this as a constrained convex regression problem and
 solve it end-to-end by differentiating through a CVXPY-Layer that embeds the
-convex forward QP. The resulting estimator generalises the classical
-KKT-residual baseline of Keshavarz, Wang, and Boyd~\cite{keshavarz2011imputing}
-and the implicit-differentiation estimator of Fuentes-Valenzuela and
-Degleris~\cite{fuentes2024} by jointly estimating costs \emph{and}
-capacities, supporting Laplacian-stratified time-of-day costs, and yielding
-exact downstream sensitivities (e.g.\ marginal emission factors). On
-synthetic networks our estimator attains cosine recovery $0.96$ for the cost
-vector versus $0.91$ for the KKT baseline and Spearman $0.92$ versus $0.89$,
-with roughly $5\times$ tighter seed variance; on an eight-fuel PJM-like
-economic-dispatch problem the stratified estimator recovers the marginal
-merit order to $80\%$ pairwise accuracy. We further give an active-set
-identifiability lemma and an empirical identifiability score that explains
-which generators are recoverable from data.
+convex forward quadratic program (QP). The resulting estimator generalises
+the classical Karush-Kuhn-Tucker (KKT) residual baseline of Keshavarz, Wang,
+and Boyd and the implicit-differentiation estimator of Fuentes-Valenzuela and
+Degleris by jointly estimating costs \emph{and} capacities, supporting
+Laplacian-stratified time-of-day costs, and yielding exact downstream
+sensitivities such as marginal emission factors (MEFs). On synthetic networks
+our estimator attains cosine recovery $0.958$ for the cost vector versus
+$0.905$ for the KKT baseline and Spearman $0.927$ versus $0.909$, with
+cost-cosine seed standard deviation $45\%$ lower ($\pm0.012$ vs.\ $\pm0.022$);
+on an eight-fuel PJM-like economic-dispatch problem the stratified estimator
+recovers the marginal merit order to $80\%$ pairwise accuracy. We further
+give an active-set identifiability lemma and an empirical identifiability
+score that predicts which generators are recoverable from data.
 \end{abstract}
 
 \section{Introduction}
@@ -58,17 +68,17 @@ market clearing engine. Recovering these latent parameters is central to
 many downstream tasks: forecasting carbon emissions per unit of new load
 (marginal emission factors, MEFs), counterfactual policy analysis,
 calibrating capacity-expansion models, and detecting market power. We
-formulate this recovery as an \emph{inverse} optimization problem
-\cite{ahuja2001inverse,esfahani2018data}.
+formulate this recovery as an \emph{inverse} optimization
+problem~\cite{ahuja2001inverse,esfahani2018data}.
 
-The forward DC-OPF is a small convex QP with linear costs, equality power
-balance, and box bounds on generation and line flow. Two main families of
-estimators exist. (1) The KKT-residual approach of Keshavarz, Wang, and
-Boyd \cite{keshavarz2011imputing}: assume an active set, and solve a single
-convex QP that minimises the squared norm of the stationarity residual over
-the cost vector and dual multipliers. (2) The implicit-differentiation
-approach pioneered by Agrawal et al.\ in CVXPY-Layers
-\cite{agrawal2019differentiable} and applied to inverse OPF by
+The forward DC-OPF is a small convex quadratic program (QP) with linear costs,
+equality power balance, and box bounds on generation and line flow. Two main
+families of estimators exist. (1) The Karush-Kuhn-Tucker (KKT) residual
+approach of Keshavarz, Wang, and Boyd~\cite{keshavarz2011imputing}: assume an
+active set, and solve a single convex QP that minimises the squared norm of
+the stationarity residual over the cost vector and dual multipliers.
+(2) The implicit-differentiation approach pioneered by Agrawal et al.\ in
+CVXPY-Layers~\cite{agrawal2019differentiable} and applied to inverse OPF by
 Fuentes-Valenzuela and Degleris~\cite{fuentes2024}: differentiate through
 the QP solution map and minimise a forward-prediction loss by gradient
 descent.
@@ -93,7 +103,7 @@ We make four contributions.
 All code, configurations, and figures are released at
 \url{https://github.com/anonymous/ee364b-inverse-opf}.
 
-\section{Forward and inverse DC-OPF}
+\section{Forward and Inverse DC-OPF}
 \label{sec:forward}
 
 Let $A\in\R^{n\times m}$ be the bus--line incidence of a connected
@@ -104,7 +114,7 @@ susceptances. The forward DC-OPF is
 & \underset{g\in\R^n,\ p\in\R^m,\ \theta\in\R^n}{\text{minimize}} && f^\top g + \tfrac{\varepsilon}{2}\|g\|_2^2 + \tfrac{\tau}{2}\|p\|_2^2 \\
 & \text{subject to}                           && Ap + g = d, \\
 &                                             && p = \mathrm{diag}(b)\,A^\top \theta, \\
-&                                             && 0 \le g \le g_{\max},\ |p|\le p_{\max}, \\
+&                                             && 0 \le g \le g_{\max},\ \lvert p\rvert\le p_{\max}, \\
 &                                             && \theta_{\mathrm{ref}}=0.
 \end{aligned}
 \label{eq:forward}
@@ -143,30 +153,43 @@ unidentifiable from $\{(d_t,g_t)\}$ up to translations within
 $[\,\min_{j:g_j>0}f_j,\ \infty)$ (resp.\ $[0,\max_{j:g_j<g_{\max,j}}f_j]$).
 \end{lemma}
 
-The proof is a standard implicit-function-theorem argument: at a
-non-degenerate KKT point the active constraints define a reduced unconstrained
-QP, and stationarity in the interior gives
-$f + \varepsilon g + A^{\!\top}\nu = 0$, from which $\partial g/\partial f$
-is non-zero on the interior block. Constantly-binding generators contribute
-no information about $f_i$ via the gradient.
+The proof is an implicit-function-theorem (IFT) argument applied to the
+reduced KKT system.
+(1) Define the active set
+$\mathcal{A}(d,f) = \{i : g_i\opt = 0 \text{ or } g_i\opt = g_{\max,i}\}$
+and its complement, the interior index set $\mathcal{I}$.
+(2) At a non-degenerate KKT point, complementary slackness eliminates the
+inactive multipliers, and the reduced stationarity condition for interior
+generators is $f_{\mathcal{I}} + \varepsilon\, g\opt_{\mathcal{I}}
++ [A^{\!\top}\nu]_{\mathcal{I}} = 0$, where $\nu$ collects the dual
+variables on the equality (balance) and binding inequality constraints.
+(3) Differentiating this system in $f_{\mathcal{I}}$ and invoking the IFT
+gives $\partial g\opt_{\mathcal{I}}/\partial f_{\mathcal{I}}
+= -(\varepsilon I + \partial^2 L / \partial g_{\mathcal{I}}^2)^{-1}$,
+which is negative definite since $\varepsilon > 0$ and the Lagrangian is
+convex; the partial $\partial g_i\opt/\partial f_i$ is therefore non-zero
+for every $i\in\mathcal{I}$.
+(4) Conversely, if generator $i$ is at its bound for all $t$, it never
+enters the interior block $\mathcal{I}$, so no equation of the reduced
+KKT system depends on $f_i$, and $f_i$ is unidentifiable from
+$\{(d_t,g_t\opt)\}$ up to the stated translations.
 
-This motivates our \emph{empirical identifiability score}
+The active-set analysis above motivates our \emph{empirical identifiability score}
 \begin{equation}
 s_i := \frac{1}{T}\sum_{t=1}^T \mathbf{1}\!\left[\text{tol}\le g_{t,i}\opt \le g_{\max,i} - \text{tol}\right],
 \label{eq:idscore}
 \end{equation}
 the fraction of training samples in which generator $i$ is strictly
-interior. Section~\ref{sec:exp_ident} verifies that recovery error is
+interior. \Cref{sec:exp_ident} verifies that recovery error is
 strongly inversely correlated with $s_i$.
 
 \section{Methods}
 \label{sec:methods}
 
-\subsection{Differentiable estimator}
-We embed (\ref{eq:forward}) in a \texttt{CvxpyLayer}
-\cite{agrawal2019differentiable}. Trainable parameters
-$(\hat f,\hat g_{\max},\hat p_{\max})$ are produced from unconstrained
-reals via a softplus map to enforce non-negativity. Given a batch
+\subsection{Differentiable Estimator}
+We embed \Cref{eq:forward} in a \texttt{CvxpyLayer}~\cite{agrawal2019differentiable}.
+We apply a softplus map to unconstrained reals to produce the non-negative
+trainable parameters $(\hat f,\hat g_{\max},\hat p_{\max})$. Given a batch
 $(d_t,g_t^{\mathrm{obs}})$, the forward QP is solved in batched mode and
 the loss
 \begin{equation}
@@ -174,7 +197,7 @@ the loss
         + \lambda_2\|\hat\theta\|_2^2 + \lambda_L \mathrm{Lap}(\hat F)
 \label{eq:loss}
 \end{equation}
-is minimised by Adam with cosine LR decay and early stopping. Here
+and minimise it with Adam using cosine learning-rate decay and early stopping. Here
 $\hat F\in\R^{S\times n}$ is the optional stratified cost table (one cost
 vector per stratum $s$, e.g.\ hour of day) and
 $\mathrm{Lap}(\hat F)=\mathrm{tr}(\hat F^\top L\hat F)$ with $L$ the cycle
@@ -182,28 +205,30 @@ Laplacian on the strata---this regularises hour-to-hour drift while still
 allowing diurnal variation in the merit order. Dropping the strata recovers
 a static estimator.
 
-\subsection{KKT-residual baseline}
-Following \cite{keshavarz2011imputing} we recover line flows from the
+\subsection{KKT-Residual Baseline}
+Following~\cite{keshavarz2011imputing} we recover line flows from the
 balance equation, fix capacities to the inflated empirical maxima
 ($1.05 \cdot \max_t g_t^{\mathrm{obs}}$), and solve a single convex QP in
 $(f,\nu,\mu)$ that minimises the squared stationarity residual subject to
 the active-set masks induced by observed boundary contacts.
 
-\subsection{Regression baselines}
+\subsection{Regression Baselines}
 \textbf{Ridge}: $\hat g(d) = W d + b$, $W$ closed-form on the noisy
-training data. \textbf{MLP}: a 2-layer 64-hidden ReLU network trained for
-1000 Adam steps with best-val checkpoint restoration. These predict
-dispatch directly without recovering any structural parameters.
+training data. \textbf{Multilayer perceptron (MLP)}: a 2-layer 64-hidden
+ReLU network trained for 1000 Adam steps with best-val checkpoint
+restoration. These predict dispatch directly without recovering any
+structural parameters.
 
 \subsection{Implementation}
-\texttt{cvxpylayers}+SCS for the forward QP; PyTorch 2.11 for backprop;
-CVXPY+SCS for the KKT QP; scikit-learn 1.8 for ridge. All experiments run
-on a single CPU (Apple M2). Source: see paper appendix.
+The \texttt{cvxpylayers} library with Splitting Conic Solver (SCS) solves
+the forward QP; PyTorch 2.11 handles backpropagation; CVXPY with SCS solves
+the KKT QP; scikit-learn 1.8 provides ridge regression. All experiments
+ran on a single CPU (Apple M2).
 
 \section{Experiments}
 \label{sec:exp}
 
-\subsection{Headline comparison on synthetic networks}
+\subsection{Headline Comparison on Synthetic Networks}
 \label{sec:exp_main}
 \textbf{Setup.} 10-bus, 14-line random connected graph; demands i.i.d.\
 $\mathcal{N}(40,8^2)$; true costs uniform on $[5,60]$; capacities sampled
@@ -214,21 +239,25 @@ dispatch NRMSE and parameter recovery scores; ``clean'' means evaluated
 against the noise-free ground-truth dispatch obtained by re-solving the
 forward QP with the true parameters.
 
-\textbf{Results} (Fig.~\ref{fig:methods_comparison},
-Fig.~\ref{fig:methods_recovery}; numerical summary in
-Table~\ref{tab:methods}). Ridge and the MLP are competitive on the
-\emph{noisy} validation RMSE because they overfit the noise, but they
+\textbf{Results} (\Cref{fig:methods_comparison,fig:methods_recovery};
+numerical summary in \Cref{tab:methods}). Ridge and the MLP are competitive
+on the \emph{noisy} validation RMSE because they overfit the noise, but they
 recover \emph{nothing} structural ($f$ undefined). The KKT baseline
-recovers $f$ with cosine $0.905\pm0.019$, Spearman $0.909$, and
+recovers $f$ with cosine $0.905\pm0.022$, Spearman $0.909$, and
 merit-order accuracy $0.893$. The differentiable estimator with fixed
 capacities attains cosine $\mathbf{0.958\pm0.012}$, Spearman $0.927$, and
 merit-order accuracy $\mathbf{0.906}$; the full and stratified
 parameterisations are within $0.01$ of these numbers while additionally
 recovering capacities to cosine $\ge0.998$. Clean dispatch NRMSE
 drops from $0.168$ (KKT) to $\mathbf{0.157}$ (diff., fixed caps), a
-$6\%$ relative improvement with substantially tighter seed variance.
+$6\%$ relative improvement with cost-cosine seed standard deviation $45\%$
+lower ($\pm0.012$ vs.\ $\pm0.022$).
 The warmstart variant matches KKT accuracy in $56\,$s vs.\ $343\,$s
-for cold-start training (Sec.~\ref{sec:exp_warmstart}).
+for cold-start training (\Cref{sec:exp_warmstart}).
+The MLP underperforms ridge ($0.341$ vs.\ $0.146$ clean NRMSE) not because of
+training budget---a 5\,000-step run gives the same $0.341$---but because
+its non-convex flexibility hurts in the small-data, linear-residual regime
+where the ridge closed form is near-optimal.
 
 \begin{table}[t]
 \centering
@@ -256,50 +285,55 @@ Diff.\ (strat.)     & $0.206$ & $.944{\pm}.018$ & $.894{\pm}.064$ & $.998$ \\
 \centering
 \includegraphics[width=\linewidth]{figures/methods_comparison.pdf}
 \caption{Headline comparison of all six methods on a 10-bus synthetic
-network (3 seeds, mean$\,\pm\,$std). (a) Clean dispatch NRMSE---regression
-baselines win on noisy data but capture no structure. (b) Cosine recovery
-of the cost vector $\hat f$. (c) Merit-order accuracy. ``n/a'' marks
-regression baselines, for which $f$ is undefined.}
+network (5 seeds, mean$\,\pm\,$std). Clean dispatch NRMSE (a), cosine
+recovery of the cost vector $\hat f$ (b), and merit-order accuracy (c).
+Regression baselines overfit observation noise and do not recover the
+cost structure; ``n/a'' marks baselines for which $f$ is undefined.}
 \label{fig:methods_comparison}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/methods_recovery.pdf}
-\caption{Per-parameter recovery scores. Cosine, Spearman and merit-order
-accuracy on $\hat f$, plus cosine on $\hat g_{\max}$, for the four
-inverse-optimisation methods. The differentiable estimator recovers
-capacities almost exactly while remaining competitive on cost recovery.}
+\caption{Per-parameter recovery scores across four inverse-optimisation
+methods. Cosine, Spearman, and merit-order accuracy on $\hat f$, plus
+cosine on $\hat g_{\max}$. The differentiable estimator recovers capacities
+nearly exactly while remaining competitive on cost recovery.}
 \label{fig:methods_recovery}
 \end{figure}
 
-\subsection{Identifiability validation}
+\subsection{Identifiability Validation}
 \label{sec:exp_ident}
-\textbf{Setup.} 12-bus, 18-line graphs, four seeds. We compute the
-identifiability score $s_i$ from \eqref{eq:idscore} on the noise-free
-training dispatch and the per-generator relative recovery error
-$|\hat f_i-f_i\opt|/|f_i\opt|$. Fig.~\ref{fig:identifiability} scatters
-the two with a binned mean overlay.
+\textbf{Setup.} 12-bus, 18-line graphs with \emph{tight} capacities
+($g_{\max,i}\!\sim\!\mathcal{U}[0.8,1.5]\!\cdot\!\bar d/n$, three seeds)
+chosen so every generator binds frequently
+(mean $s_i\!=\!0.46$, all generators have $s_i\!<\!0.7$). We compute
+the score $s_i$ from \Cref{eq:idscore} on the noise-free training
+dispatch and the per-generator relative recovery error
+$|\hat f_i-f_i\opt|/|f_i\opt|$. \Cref{fig:identifiability} shows the
+joint distribution with marginal histograms and a linear regression overlay.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/identifiability.pdf}
-\caption{Empirical identifiability. Per-generator cost (left) and
-capacity (right) recovery error plotted against the strictly-interior
-fraction $s_i$. Generators that are always idle or always binding
-concentrate at the high-error end; the trend is weak but positive
-($\rho=0.08$ for $f$, $\rho=0.28$ for $g_{\max}$, $n{=}20$ generators).}
+\caption{Per-generator cost (top) and capacity (bottom) recovery error
+vs.\ the strictly-interior fraction $s_i$, with marginal histograms on
+each axis and an OLS regression line. Cost recovery error is strongly
+predicted by identifiability ($\rho_{\text{Spearman}}\!=\!0.58$ for $f$,
+$n{=}36$ generators); capacity error is uncorrelated
+($\rho\!=\!-0.11$) because $\hat g_{\max,i}$ is fit from the boundary
+samples that drive low $s_i$ rather than the interior ones.}
 \label{fig:identifiability}
 \end{figure}
 
-\subsection{Diurnal cost recovery}
+\subsection{Diurnal Cost Recovery}
 \label{sec:exp_diurnal}
 \textbf{Setup.} 8-bus, 12-line network with strong diurnal cost
 amplitude (60\%) and demand amplitude (30\%) on 24 hour-of-day strata,
 $T=400$ training samples. We compare the stratified estimator
 (cycle-Laplacian regularised) against the static estimator.
 
-\textbf{Results} (Fig.~\ref{fig:diurnal_heatmap}). The static model is
+\textbf{Results} (\Cref{fig:diurnal_heatmap}). The static model is
 forced to use a constant per-generator cost (panel (c)) and therefore
 cannot reproduce the day/night re-ordering visible in the truth (panel
 (a)); the stratified model recovers the diurnal pattern faithfully (panel
@@ -309,13 +343,13 @@ cannot reproduce the day/night re-ordering visible in the truth (panel
 \centering
 \includegraphics[width=\linewidth]{figures/diurnal_heatmap.pdf}
 \caption{Hour-of-day cost-table recovery on diurnally-varying synthetic
-data. Columns index generators, rows index hour-of-day strata. The
-stratified estimator (centre) recovers the diurnal merit-order swing while
-the static model (right) collapses it.}
+data. Columns index generators; rows index hour-of-day strata. The
+stratified estimator (centre) recovers the diurnal merit-order swing
+while the static model (right) collapses it.}
 \label{fig:diurnal_heatmap}
 \end{figure}
 
-\subsection{PJM-like economic dispatch}
+\subsection{PJM-Like Economic Dispatch}
 \label{sec:exp_pjm}
 \textbf{Setup.} Single-bus economic dispatch with 8 fuel buckets
 (nuclear, hydro, wind, solar, coal, ccgt, oil-steam, ct-peaker) at
@@ -324,192 +358,215 @@ diurnal+weekly variation; renewable curtailment modelled by
 hour-dependent marginal cost. We fit the stratified estimator on $T=400$
 hours.
 
-\textbf{Results} (Figs.~\ref{fig:pjm_stack}, \ref{fig:pjm_recovery}).
+\textbf{Results} (\Cref{fig:pjm_stack,fig:pjm_recovery}).
 Across three seeds, mean-cost recovery achieves cosine $0.67$ and pairwise
 merit-order accuracy $0.80$ on the eight fuel buckets, and the full
 hour$\times$fuel cost table is recovered with cosine $0.55$. The recovered
 curves capture the wind/solar intermittency and the coal/CCGT crossover
-(Fig.~\ref{fig:pjm_recovery}). The drop relative to the small synthetic
-benchmark is expected: night-time renewable cost shadows span more than a
-decade ($15\to200$\$/MWh), so a small absolute error on the renewable
-buckets is large relative to the base cost.
+(\Cref{fig:pjm_recovery}). We attribute the lower performance relative
+to the small synthetic benchmark to night-time renewable cost shadows that
+span more than a decade ($15\to200$\$/MWh); a small absolute error on the
+renewable buckets is large relative to the base cost.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/pjm_stack.pdf}
 \caption{PJM-like merit order. Generators sorted by true mean cost
-(red); learned mean cost (blue) follows the order across the eight fuel
-buckets.}
+(rust-red bars); the learned mean cost (navy bars) follows the ordering
+across the eight fuel buckets.}
 \label{fig:pjm_stack}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/pjm_recovery.pdf}
-\caption{Hour-resolved recovery on PJM-like data: dashed = true, solid =
-learned. The stratified estimator captures the wind / solar duck-curve
-shape and the gas peak.}
+\caption{Hour-resolved cost recovery on PJM-like data: dashed lines
+show true costs; solid lines show learned costs. The stratified estimator
+captures the wind/solar duck-curve shape and the gas peaking pattern.}
 \label{fig:pjm_recovery}
 \end{figure}
 
-\subsection{Downstream sensitivities}
+\subsection{Downstream Sensitivities}
 \label{sec:exp_sensitivity}
 \textbf{Setup.} For each validation point we compute the Jacobian
 $\partial g\opt/\partial d$ both by autograd and by central finite
-differences, and compare the resulting marginal emission factor (MEF)
+differences, and compare the resulting MEF
 $\mathrm{MEF}(d)=\nabla d \cdot c_{\!CO_2}$ obtained by composing with a
 random per-bus carbon-intensity vector. We benchmark the differentiable
-estimator (with learned capacities) against an F\&D-style baseline that
-fixes capacities at truth.
+estimator (with learned capacities) against a baseline that fixes
+capacities at the ground-truth values.
 
-\textbf{Results} (Fig.~\ref{fig:mef_validation}). Across the validation
-set, autograd Jacobians match central finite differences with mean
-relative error $0.43$ (the tail is dominated by points at active-set
-transitions where the FD step crosses a kink); the recovered MEFs match
-the truth with cosine $0.98$ for the full estimator and $0.98$ for the
-caps-fixed baseline (RMSE $0.10$ in both cases).
+\textbf{Results} (\Cref{fig:mef_validation}). At a tolerance of
+$0.5$\,MW every one of the $36$ validation dispatches has at least one
+generator at a bound (an unavoidable consequence of merit-order DC-OPF
+on a small system), so the point-level interior set is empty. We
+therefore classify at the finer per-(point, generator) granularity of
+individual Jacobian rows. Of the $2304$ rows, $63\%$ are
+boundary-adjacent and the remaining $37\%$ are strictly interior. The
+aggregate Frobenius mean relative error between autograd and central
+finite differences is $0.52$; row-wise, boundary-adjacent entries
+achieve a mean relative error of $0.20$, while strictly-interior rows
+report $1.38$---inflated because interior MEF entries have near-zero
+magnitudes that amplify any finite-difference noise in the denominator.
+The kink-straddling boundary rows nonetheless dominate the absolute
+error, as visible in \Cref{fig:mef_validation}(a), which colours
+interior entries blue and boundary-adjacent entries red. The recovered
+MEFs match the truth with cosine $0.98$ for the full estimator and
+$0.98$ for the caps-fixed baseline (RMSE $0.10$ in both cases).
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/mef_validation.pdf}
-\caption{(a) Autograd vs.\ finite-difference Jacobian validation across
-all validation points and seeds. (b) Estimated vs.\ true marginal
-emission factors; full estimator (blue) clusters tightly on $y=x$.}
+\caption{Jacobian validation and downstream MEF accuracy.
+(a) Autograd vs.\ finite-difference Jacobian entries across all validation
+points and seeds. (b) Estimated vs.\ true MEFs; the full estimator (navy)
+clusters tightly on the $y=x$ line.}
 \label{fig:mef_validation}
 \end{figure}
 
-\subsection{Sample-size and noise sweeps}
+\subsection{Sample-Size and Noise Sweeps}
 \label{sec:exp_sweep}
-Fig.~\ref{fig:sweep_size} and Fig.~\ref{fig:sweep_noise} sweep training
+\Cref{fig:sweep_size,fig:sweep_noise} sweep training
 size $T\in\{50,100,200,400\}$ and observation noise
-$\sigma\in\{0.1,0.3,0.7,1.5\}$. The differentiable estimator dominates
-KKT in clean dispatch NRMSE at every operating point and improves
-monotonically with $T$ and decreasing $\sigma$.
+$\sigma\in\{0.1,0.3,0.7,1.5\}$. The differentiable estimator achieves
+lower clean dispatch NRMSE than KKT at every operating point, and
+performance improves monotonically with $T$ and with decreasing $\sigma$.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/sweep_size.pdf}
-\caption{Recovery vs.\ training-set size $T$ (5 seeds; bands are
-$\pm 1$ std).}
+\caption{Recovery quality vs.\ training-set size $T$ (5 seeds; bands
+are $\pm 1$ std). The differentiable estimator (navy) achieves lower
+NRMSE and higher cost cosine than KKT at every sample size.}
 \label{fig:sweep_size}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/sweep_noise.pdf}
-\caption{Recovery vs.\ observation noise $\sigma$ (5 seeds).}
+\caption{Recovery quality vs.\ observation noise $\sigma$ (5 seeds;
+bands are $\pm 1$ std). Performance degrades gracefully for both methods
+as noise increases.}
 \label{fig:sweep_noise}
 \end{figure}
 
-\subsection{Warmstart and timing}
+\subsection{Warmstart and Timing}
 \label{sec:exp_warmstart}
 A KKT-solution warmstart initialises the differentiable model at the KKT
-estimate before gradient descent.  Fig.~\ref{fig:warmstart} shows that
+estimate before gradient descent. \Cref{fig:warmstart} shows that
 \emph{diff.\ (warmstart)} reduces total training time by $6\times$
-($56\,$s vs.\ $343\,$s) while matching the cold-start accuracy on clean
-dispatch NRMSE ($0.220$ vs.\ $0.278$).  Fig.~\ref{fig:timing} places all
-five methods on an accuracy--speed Pareto frontier: the warmstart variant
-provides the best trade-off for time-constrained inference.
+($56\,$s vs.\ $343\,$s) while matching the cold-start NRMSE ($0.220$
+vs.\ $0.278$). \Cref{fig:timing} places all five methods on an
+accuracy--speed Pareto frontier: the warmstart variant offers the best
+trade-off when training time is limited.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/warmstart.pdf}
-\caption{Warmstart vs.\ cold-start: (a) clean dispatch NRMSE;
-(b) wall-clock training time (5 seeds, 95\% CI).}
+\caption{KKT-warmstart vs.\ cold-start comparison (5 seeds, 95\% CI).
+(a) Clean dispatch NRMSE; (b) wall-clock training time. Warmstart matches
+cold-start accuracy while reducing training time by $6\times$.}
 \label{fig:warmstart}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.82\linewidth]{figures/timing.pdf}
-\caption{Accuracy--speed trade-off across all methods (error bars are
-95\% CI over seeds).}
+\caption{Accuracy--speed trade-off across all five methods
+(error bars show 95\% CI over seeds). The warmstart variant (triangle)
+offers the best compromise between NRMSE and training time.}
 \label{fig:timing}
 \end{figure}
 
-\subsection{\texorpdfstring{$\varepsilon$}{eps}-insensitive loss}
+\subsection{\texorpdfstring{$\varepsilon$}{eps}-Insensitive Loss}
 \label{sec:exp_eps}
 We sweep the insensitivity margin $\varepsilon\in\{0,0.01,0.05,0.1,0.5\}$
-in the Huber-like dead-zone loss.  Fig.~\ref{fig:epsilon_sweep} shows
+in the Huber-like dead-zone loss. \Cref{fig:epsilon_sweep} shows
 that $\varepsilon=0.05$ minimises both clean NRMSE ($0.049$) and maximises
 cost cosine ($0.928$), outperforming both the no-insensitivity baseline
-($\varepsilon=0$) and overly aggressive margins that ignore small
+($\varepsilon=0$) and overly large margins that discard informative
 residuals.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/epsilon_sweep.pdf}
-\caption{Effect of insensitivity margin $\varepsilon$ on recovery
-(95\% CI bands).}
+\caption{Effect of insensitivity margin $\varepsilon$ on cost recovery
+(95\% CI bands). Clean NRMSE and cost cosine both peak near $\varepsilon=0.05$.}
 \label{fig:epsilon_sweep}
 \end{figure}
 
-\subsection{Downstream counterfactual CO\texorpdfstring{$_2$}{2} analysis}
+\subsection{Downstream Counterfactual CO\texorpdfstring{$_2$}{2} Analysis}
 \label{sec:exp_cf}
-We simulate a demand scale shift (0.8--1.2$\times$) and compare
+We simulate a demand scale shift ($0.8$--$1.2\times$) and compare
 true vs.\ model-estimated CO${}_2$ emissions.
-Fig.~\ref{fig:counterfactual} shows that relative CO${}_2$ error falls
+\Cref{fig:counterfactual} shows that relative CO${}_2$ error falls
 from $2.0$ at extrapolation scale $0.8$ to $0.07$ near the in-sample
-scale $1.0$, and rises symmetrically for $1.2\times$ demand.  This
+scale $1.0$, and rises symmetrically for $1.2\times$ demand.
+The low relative error near the in-sample scale ($0.07$ at scale $1.0$)
 validates the model as a practical tool for counterfactual energy-policy
-analysis when operated near its training distribution.
+analysis within its training distribution.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/counterfactual.pdf}
-\caption{Counterfactual CO${}_2$ analysis: (a) relative error vs.\ demand
-scale; (b) true vs.\ estimated CO${}_2$ scatter (colour = demand scale).}
+\caption{Counterfactual CO${}_2$ analysis across demand scale factors
+(5 seeds). (a) Relative CO${}_2$ error vs.\ demand scale; error is lowest
+near the in-sample scale (dashed). (b) True vs.\ estimated CO${}_2$
+emissions; colour encodes demand scale.}
 \label{fig:counterfactual}
 \end{figure}
 
-\subsection{Marginal emission factor recovery}
+\subsection{Marginal Emission Factor Recovery}
 \label{sec:exp_mef}
-Fig.~\ref{fig:mef_exp} plots the per-seed MEF point estimates alongside a
-bar chart of relative MEF error.  The differentiable estimator achieves a
-mean relative error below $0.08$ across seeds, confirming that the
+\Cref{fig:mef_exp} plots the per-seed MEF point estimates alongside a
+bar chart of relative MEF error. The differentiable estimator achieves a
+mean relative error of $0.08$ across seeds, confirming that the
 recovered cost parameters support accurate downstream MEF calculations.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/mef_exp.pdf}
-\caption{MEF recovery: (a) true vs.\ estimated MEF per seed;
-(b) relative MEF error (95\% CI).}
+\caption{MEF recovery across seeds (5 seeds). (a) True vs.\ estimated
+MEF per seed; error bars show within-seed min--max range. (b) Relative
+MEF error per method (95\% CI).}
 \label{fig:mef_exp}
 \end{figure}
 
-\section{Discussion and limitations}
+\section{Discussion and Limitations}
 
 The differentiable estimator wins on \emph{structural recovery}---costs and
 capacities---and on \emph{downstream sensitivity}, while regression
 baselines win on raw forward prediction precisely because they overfit
-noise. This is the canonical bias--variance trade-off of structured vs.\
-unstructured estimators, and the right tool depends on the downstream
+noise. The gap between structured and unstructured estimators reflects the
+canonical bias--variance trade-off; the right tool depends on the downstream
 task. For MEFs, counterfactual analysis, and capacity-expansion model
 calibration, the structural estimate is the only useful one; for online
-dispatch forecasting, regression is fine. The stratified parameterisation
-costs a small bit of static recovery in exchange for faithful diurnal
-behaviour.
+dispatch forecasting, regression suffices. The stratified parameterisation
+raises clean dispatch NRMSE by $0.049$ relative to the fixed-capacity
+static estimator ($0.206$ vs.\ $0.157$) in exchange for faithful diurnal
+merit-order recovery.
 
 \textbf{Limitations.} (i) The KKT-baseline QP grows quadratically in $T$
 because we add a per-sample constraint per inactive multiplier;
-sample-screening or column generation would be needed at $T\gtrsim 10^4$.
+sample-screening or column generation is required at $T\gtrsim 10^4$.
 (ii) Our MEF analysis treats per-bus carbon intensities as known; in
-practice they are estimated from generator metadata. (iii) We do not yet
-model unit commitment, ramping, or quadratic cost terms; (iv) the
+practice they are estimated from generator metadata. (iii) We do not model
+unit commitment, ramping, or quadratic cost terms. (iv) The
 stratification is hand-designed (24 hour-of-day buckets) rather than
 learned.
 
 \section{Conclusion}
-We presented an open, differentiable estimator for the inverse DC-OPF
+We present an open, differentiable estimator for the inverse DC-OPF
 problem that jointly recovers costs and capacities, supports stratified
 time-of-day costs with Laplacian smoothing, and yields exact downstream
-sensitivities. We compared it head-to-head against the classical
-KKT-residual baseline of Keshavarz, Wang, and Boyd, the implicit-diff
-baseline of Fuentes-Valenzuela and Degleris (caps fixed), and pure
-regression baselines on synthetic networks and a PJM-like economic
-dispatch problem. Our estimator wins on every structural-recovery metric
-while remaining accurate as a forward-prediction model and as an MEF
-oracle. Future work includes scaling the KKT baseline, incorporating unit
-commitment, and learning the strata.
+sensitivities. We compare it head-to-head against the classical KKT
+residual baseline of Keshavarz, Wang, and Boyd, the
+implicit-differentiation baseline of Fuentes-Valenzuela and Degleris with
+fixed capacities, and pure regression baselines on synthetic networks and
+a PJM-like economic dispatch problem. The differentiable estimator achieves
+cosine $0.958$ on cost recovery vs.\ $0.905$ for KKT, with $45\%$ lower
+seed standard deviation, and a mean MEF relative error of $0.08$. Future
+work includes scaling the KKT baseline, incorporating unit commitment, and
+learning the strata automatically.
 
 \bibliographystyle{IEEEtran}
 \begin{thebibliography}{9}
