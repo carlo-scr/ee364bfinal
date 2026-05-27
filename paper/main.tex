@@ -448,7 +448,10 @@ synthetic network. (a) Autograd vs.\ central finite-difference
 Jacobian entries on smooth rows (entries whose perturbation does not
 cross an active-set boundary). (b) Estimated vs.\ true MEFs; both the
 full (navy) and caps-fixed F\&D (grey) estimators cluster around the
-$y=x$ line with cosine $0.97$.}
+$y=x$ line with cosine $0.97$. A small number of estimated MEFs are
+mildly negative: these are numerical artefacts from active-set
+transitions where the autograd Jacobian sign-flips across a kink in
+the merit-order map, not physical MEFs.}
 \label{fig:mef_validation}
 \end{figure}
 

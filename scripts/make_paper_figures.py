@@ -199,12 +199,12 @@ def fig_identifiability():
         ax.scatter(df["id_score"], df[ycol], s=10,
                    color=PALETTE["mid"], alpha=0.7, edgecolors=PALETTE["navy"],
                    linewidths=0.3)
-        bins = np.linspace(df["id_score"].min(), df["id_score"].max(), 7)
-        idx = np.digitize(df["id_score"], bins)
+        bins = np.unique(np.quantile(df["id_score"], np.linspace(0, 1, 7)))
+        idx = np.digitize(df["id_score"], bins[1:-1], right=False)
         means_x, means_y = [], []
-        for b in range(1, len(bins)):
+        for b in range(0, len(bins) - 1):
             mask = idx == b
-            if mask.sum() >= 2:
+            if mask.sum() >= 3:
                 means_x.append(df["id_score"][mask].mean())
                 means_y.append(df[ycol][mask].mean())
         ax.plot(means_x, means_y, "o-", color=PALETTE["accent"],
