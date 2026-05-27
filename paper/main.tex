@@ -356,9 +356,10 @@ model does (panel (b)).
 \centering
 \includegraphics[width=\linewidth]{figures/diurnal_heatmap.pdf}
 \caption{Hour-of-day cost-table recovery on diurnally-varying synthetic
-data. Columns index generators; rows index hour-of-day strata. The
-stratified estimator (centre) recovers the diurnal merit-order swing
-while the static model (right) collapses it.}
+data, shown as deviations from each generator's mean cost. Columns
+index generators; rows index hour-of-day strata. The stratified
+estimator (centre) recovers the diurnal merit-order swing, while the
+static model (right) has zero hour-of-day signal.}
 \label{fig:diurnal_heatmap}
 \end{figure}
 
@@ -430,9 +431,13 @@ capacities at the ground-truth values.
 
 \textbf{Results} (\Cref{fig:mef_validation}). With $T=400$, observation
 noise $\sigma=0.15$, and $20$ test points per seed across 3 seeds, the
-differentiable estimator's MEFs match the truth with cosine $0.97$ and
-RMSE $0.11$ (the caps-fixed F\&D-style baseline matches at cosine
-$0.97$, RMSE $0.12$). For Jacobian validation we drop entries where
+differentiable estimator's bus-level MEF vectors match the truth with
+cosine $0.97$ and RMSE $0.11$ (the caps-fixed F\&D-style baseline
+matches at cosine $0.97$, RMSE $0.12$). On a per-operating-point basis,
+the full estimator has mean MEF-vector cosine $0.985$ and 5th-percentile
+cosine $0.966$, so the recovered sensitivity profile is aligned with the
+true profile for nearly every validation point. For Jacobian validation
+we drop entries where
 $|J_{\text{FD}}-J_{\text{AG}}|>1$ (active-set transitions across the
 finite-difference perturbation produce one-sided kinks where central
 FD is not well-defined); on the remaining smooth entries autograd and
@@ -447,12 +452,9 @@ and the remaining $37\%$ are interior.
 \caption{Jacobian validation and downstream MEF accuracy on the 8-bus
 synthetic network. (a) Autograd vs.\ central finite-difference
 Jacobian entries on smooth rows (entries whose perturbation does not
-cross an active-set boundary). (b) Estimated vs.\ true MEFs; both the
-full (navy) and caps-fixed F\&D (grey) estimators cluster around the
-$y=x$ line with cosine $0.97$. A small number of estimated MEFs are
-mildly negative: these are numerical artefacts from active-set
-transitions where the autograd Jacobian sign-flips across a kink in
-the merit-order map, not physical MEFs.}
+cross an active-set boundary). (b) Per-operating-point cosine between
+the true and estimated bus-level MEF vectors; values stay close to one
+across almost all validation points.}
 \label{fig:mef_validation}
 \end{figure}
 

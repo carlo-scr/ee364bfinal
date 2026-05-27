@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
 import numpy as np
 import pandas as pd
 
@@ -259,17 +260,22 @@ def fig_diurnal():
     apply_paper_style()
     fig, axes = plt.subplots(1, 3, figsize=figsize(2.0, 2.1), sharey=True,
                              gridspec_kw={"wspace": 0.10})
-    vmin = float(min(f_true.min(), f_strat.min(), static_table.min()))
-    vmax = float(max(f_true.max(), f_strat.max(), static_table.max()))
+    f_true_dev = f_true - f_true.mean(axis=0, keepdims=True)
+    f_strat_dev = f_strat - f_strat.mean(axis=0, keepdims=True)
+    static_dev = static_table - static_table.mean(axis=0, keepdims=True)
+    vmax = float(max(np.abs(f_true_dev).max(), np.abs(f_strat_dev).max(), 1e-6))
+    norm = TwoSlopeNorm(vmin=-vmax, vcenter=0.0, vmax=vmax)
+    diurnal_cmap = LinearSegmentedColormap.from_list(
+        "diurnal_dev", [PALETTE["accent"], "#F5F1EE", PALETTE["navy"]], N=256)
     panels = [
-        ("a", axes[0], f_true.T,       "truth"),
-        ("b", axes[1], f_strat.T,      strat_title),
-        ("c", axes[2], static_table.T, static_title),
+        ("a", axes[0], f_true_dev.T,   "truth"),
+        ("b", axes[1], f_strat_dev.T,  strat_title),
+        ("c", axes[2], static_dev.T,   static_title),
     ]
     im = None
     for label, ax, mat, title in panels:
-        im = ax.imshow(mat, aspect="auto", cmap=NAVY_CMAP,
-                       vmin=vmin, vmax=vmax, origin="lower",
+        im = ax.imshow(mat, aspect="auto", cmap=diurnal_cmap,
+                       norm=norm, origin="lower",
                        interpolation="nearest")
         ax.set_xlabel("Hour-of-day stratum")
         _panel_label(ax, label)
@@ -281,7 +287,7 @@ def fig_diurnal():
     axes[0].set_ylabel("Generator index")
     cax = fig.add_axes([0.92, 0.18, 0.015, 0.66])
     cb = fig.colorbar(im, cax=cax)
-    cb.set_label(r"Marginal cost $f$")
+    cb.set_label(r"Cost deviation from generator mean")
     cb.outline.set_linewidth(0.4)
     fig.subplots_adjust(left=0.07, right=0.90, bottom=0.18, top=0.88)
     save_figure(fig, "diurnal_heatmap", OUT / "diurnal")
@@ -356,24 +362,31 @@ def fig_mef_validation():
             ha="right", va="bottom", fontsize=7, color=PALETTE["deep"])
 
     ax = axes[1]
-    lo = float(mef_true.min()); hi = float(mef_true.max())
-    pad = 0.05 * (hi - lo)
-    ax.plot([lo - pad, hi + pad], [lo - pad, hi + pad], color=PALETTE["accent"],
-            linewidth=0.8, zorder=1)
-    ax.scatter(mef_true.reshape(-1), mef_fcap.reshape(-1), s=5,
-               color=PALETTE["graylt"], alpha=0.55,
-               edgecolors=PALETTE["gray"], linewidths=0.15,
-               label=r"caps fixed (F\&D)", zorder=2)
-    ax.scatter(mef_true.reshape(-1), mef_learn.reshape(-1), s=5,
-               color=PALETTE["navy"], alpha=0.7,
-               edgecolors=PALETTE["deep"], linewidths=0.15,
-               label="diff. (full)", zorder=3)
-    ax.set_xlim(lo - pad, hi + pad); ax.set_ylim(lo - pad, hi + pad)
-    ax.set_aspect("equal", adjustable="box")
-    ax.set_xlabel(r"True MEF (tCO$_2$/MWh)")
-    ax.set_ylabel("Estimated MEF")
+    def point_cosine(pred):
+        dots = np.sum(mef_true * pred, axis=1)
+        den = (np.linalg.norm(mef_true, axis=1) * np.linalg.norm(pred, axis=1)
+               + 1e-9)
+        return dots / den
+
+    cos_full = point_cosine(mef_learn)
+    cos_fcap = point_cosine(mef_fcap)
+    order = np.argsort(cos_full)
+    x = np.arange(len(order))
+    ax.plot(x, cos_full[order], color=PALETTE["navy"], linewidth=1.1,
+            label="diff. (full)")
+    ax.plot(x, cos_fcap[order], color=PALETTE["gray"], linewidth=0.9,
+            linestyle="--", label=r"caps fixed (F\&D)")
+    ax.fill_between(x, cos_full[order], 1.0, color=PALETTE["light"],
+                alpha=0.22, linewidth=0)
+    ax.set_ylim(0.55, 1.01)
+    ax.set_xlabel("Validation point (sorted by full-model cosine)")
+    ax.set_ylabel("MEF-vector cosine")
+    ax.text(0.04, 0.08,
+            fr"mean {cos_full.mean():.3f}; 5th pct. {np.quantile(cos_full, 0.05):.3f}",
+            transform=ax.transAxes, ha="left", va="bottom", fontsize=7,
+            color=PALETTE["deep"])
     _panel_label(ax, "b")
-    ax.legend(loc="upper left")
+    ax.legend(loc="lower right")
 
     fig.tight_layout(pad=0.4)
     save_figure(fig, "mef_validation", OUT / "mef_validation")
