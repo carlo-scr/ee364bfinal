@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-from matplotlib.colors import LinearSegmentedColormap, TwoSlopeNorm
+
 import numpy as np
 import pandas as pd
 
@@ -260,22 +260,17 @@ def fig_diurnal():
     apply_paper_style()
     fig, axes = plt.subplots(1, 3, figsize=figsize(2.0, 2.1), sharey=True,
                              gridspec_kw={"wspace": 0.10})
-    f_true_dev = f_true - f_true.mean(axis=0, keepdims=True)
-    f_strat_dev = f_strat - f_strat.mean(axis=0, keepdims=True)
-    static_dev = static_table - static_table.mean(axis=0, keepdims=True)
-    vmax = float(max(np.abs(f_true_dev).max(), np.abs(f_strat_dev).max(), 1e-6))
-    norm = TwoSlopeNorm(vmin=-vmax, vcenter=0.0, vmax=vmax)
-    diurnal_cmap = LinearSegmentedColormap.from_list(
-        "diurnal_dev", [PALETTE["accent"], "#F5F1EE", PALETTE["navy"]], N=256)
+    vmin = float(min(f_true.min(), f_strat.min(), static_table.min()))
+    vmax = float(max(f_true.max(), f_strat.max(), static_table.max()))
     panels = [
-        ("a", axes[0], f_true_dev.T,   "truth"),
-        ("b", axes[1], f_strat_dev.T,  strat_title),
-        ("c", axes[2], static_dev.T,   static_title),
+        ("a", axes[0], f_true.T,       "truth"),
+        ("b", axes[1], f_strat.T,      strat_title),
+        ("c", axes[2], static_table.T, static_title),
     ]
     im = None
     for label, ax, mat, title in panels:
-        im = ax.imshow(mat, aspect="auto", cmap=diurnal_cmap,
-                       norm=norm, origin="lower",
+        im = ax.imshow(mat, aspect="auto", cmap=NAVY_CMAP,
+                       vmin=vmin, vmax=vmax, origin="lower",
                        interpolation="nearest")
         ax.set_xlabel("Hour-of-day stratum")
         _panel_label(ax, label)
@@ -287,7 +282,7 @@ def fig_diurnal():
     axes[0].set_ylabel("Generator index")
     cax = fig.add_axes([0.92, 0.18, 0.015, 0.66])
     cb = fig.colorbar(im, cax=cax)
-    cb.set_label(r"Cost deviation from generator mean")
+    cb.set_label(r"Marginal cost $f$")
     cb.outline.set_linewidth(0.4)
     fig.subplots_adjust(left=0.07, right=0.90, bottom=0.18, top=0.88)
     save_figure(fig, "diurnal_heatmap", OUT / "diurnal")
